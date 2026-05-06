@@ -1,6 +1,7 @@
 package com.example.neakta.ui.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,10 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,13 +31,34 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.neakta.R
 
-// Neakta color tokens
-val GemGold = Color(0xFFE8C97A)
-val NightBase = Color(0xFF0C0C0E)
-val SurfaceDark = Color(0xFF17171C)
-val TextPrimary = Color(0xFFF0EDE6)
-val TextSecondary = Color(0xFF9E9A92)
-val BorderGold = Color(0x40E8C97A)
+// ─── Font Families ─────────────────────────────────────────
+private val CormorantGaramond = FontFamily(
+    Font(R.font.cormorant_garamond_light,    FontWeight.Light),
+    Font(R.font.cormorant_garamond_regular,  FontWeight.Normal),
+    Font(R.font.cormorant_garamond_italic,   FontWeight.Normal, FontStyle.Italic),
+    Font(R.font.cormorant_garamond_semibold, FontWeight.SemiBold),
+)
+
+private val Cinzel = FontFamily(
+    Font(R.font.cinzel_regular,  FontWeight.Normal),
+    Font(R.font.cinzel_semibold, FontWeight.SemiBold),
+)
+
+// ─── Color Tokens ───────────────────────────────────────────
+val GemGold       = Color(0xFFD4B870)
+val GemGoldDim    = Color(0xFFD4B870).copy(alpha = 0.5f)
+val NightBase     = Color(0xFF0C0A07)
+val TextPrimary   = Color(0xFFEEE6D2)
+val TextSecondary = Color(0xFFB4A88C).copy(alpha = 0.70f)
+val BorderGold    = Color(0xFFD4B870).copy(alpha = 0.30f)
+val RuleColor     = Color(0xFFD4B870).copy(alpha = 0.35f)
+
+private val CardShape = RoundedCornerShape(
+    topStart = 28.dp,
+    topEnd = 28.dp,
+    bottomStart = 0.dp,
+    bottomEnd = 0.dp
+)
 
 @Composable
 fun LoginScreen(
@@ -45,7 +72,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // React to login state changes
     LaunchedEffect(loginState) {
         if (loginState is LoginState.Success) {
             onLoginSuccess()
@@ -55,7 +81,7 @@ fun LoginScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Background photo
+        // ── Background photo ────────────────────────────────
         AsyncImage(
             model = R.drawable.bayon_intro,
             contentDescription = null,
@@ -63,158 +89,236 @@ fun LoginScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Dark gradient overlay
+        // ── Gradient overlay ────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.0f to Color(0x00000000),
-                            0.35f to Color(0x55000000),
-                            0.6f to Color(0xCC0C0C0E),
-                            1.0f to Color(0xFF0C0C0E)
+                            0.0f to Color(0x330C0A07),
+                            0.3f to Color(0x660C0A07),
+                            0.6f to Color(0xAA0C0A07),
+                            1.0f to Color(0xFF0C0A07)
                         )
                     )
                 )
         )
 
-        // Content
+        // ── TOP: NEAKTA ─────────────────────────────────────
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 28.dp),
-            verticalArrangement = Arrangement.Bottom
+                .align(Alignment.TopCenter)
+                .padding(top = 72.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo
             Text(
-                text = "neakta ✦",
-                color = GemGold,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Screen title
-            Text(
-                text = "Log in",
-                color = TextPrimary,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Email field
-            NeaktaTextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = "Enter your email",
-                label = "Email",
-                keyboardType = KeyboardType.Email
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Password field
-            NeaktaTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = "Enter your password",
-                label = "Password",
-                isPassword = true,
-                passwordVisible = passwordVisible,
-                onPasswordToggle = { passwordVisible = !passwordVisible }
-            )
-
-            // Forgot password
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TextButton(
-                    onClick = { },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Text(
-                        text = "Forgot password?",
-                        color = GemGold,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Error message
-            if (loginState is LoginState.Error) {
-                Text(
-                    text = (loginState as LoginState.Error).message,
-                    color = Color(0xFFE87A7A),
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                text = "NEAKTA",
+                style = TextStyle(
+                    fontFamily = Cinzel,
+                    fontSize = 38.sp,
+                    letterSpacing = 10.sp,
+                    color = GemGold,
+                    textAlign = TextAlign.Center
                 )
-            }
+            )
+        }
 
-            // Login button
-            Button(
-                onClick = { viewModel.login(email, password) },
-                enabled = loginState !is LoginState.Loading,
+        // ── BOTTOM: dark card + form ─────────────────────────
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    color = Color(0xF00C0A07),
+                    shape = CardShape
+                )
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            GemGold.copy(alpha = 0.4f),
+                            Color.Transparent
+                        )
+                    ),
+                    shape = CardShape
+                )
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GemGold,
-                    disabledContainerColor = GemGold.copy(alpha = 0.5f)
-                )
+                    .padding(horizontal = 28.dp)
+                    .padding(top = 28.dp, bottom = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (loginState is LoginState.Loading) {
-                    CircularProgressIndicator(
-                        color = NightBase,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp)
+
+                // SIGN IN label
+                Text(
+                    text = "SIGN IN",
+                    style = TextStyle(
+                        fontFamily = Cinzel,
+                        fontSize = 11.sp,
+                        letterSpacing = 4.sp,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
                     )
-                } else {
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Thin gold rule
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(1.dp)
+                        .background(RuleColor)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Email field
+                NeaktaTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "Email address",
+                    label = "EMAIL",
+                    keyboardType = KeyboardType.Email
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Password field
+                NeaktaTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = "Password",
+                    label = "PASSWORD",
+                    isPassword = true,
+                    passwordVisible = passwordVisible,
+                    onPasswordToggle = { passwordVisible = !passwordVisible }
+                )
+
+                // Forgot password
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    TextButton(
+                        onClick = { },
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Forgot password?",
+                            style = TextStyle(
+                                fontFamily = CormorantGaramond,
+                                fontSize = 12.sp,
+                                fontStyle = FontStyle.Italic,
+                                color = GemGoldDim
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Error message
+                if (loginState is LoginState.Error) {
                     Text(
-                        text = "Log in →",
-                        color = NightBase,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                        text = (loginState as LoginState.Error).message,
+                        color = Color(0xFFE87A7A),
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                // LOG IN button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(
+                                    GemGold.copy(alpha = 0.15f),
+                                    GemGold.copy(alpha = 0.05f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = GemGold.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(50)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (loginState is LoginState.Loading) {
+                        CircularProgressIndicator(
+                            color = GemGold,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Button(
+                            onClick = { viewModel.login(email, password) },
+                            enabled = loginState !is LoginState.Loading,
+                            modifier = Modifier.fillMaxSize(),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            elevation = null
+                        ) {
+                            Text(
+                                text = "LOG IN",
+                                style = TextStyle(
+                                    fontFamily = Cinzel,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 3.sp,
+                                    color = GemGold
+                                )
+                            )
+                        }
+                    }
+                }
 
-            // Register link
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Don't have an account? ",
-                    color = TextSecondary,
-                    fontSize = 12.sp
-                )
-                TextButton(
-                    onClick = onNavigateToRegister,
-                    contentPadding = PaddingValues(0.dp)
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Register link
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Register now",
-                        color = GemGold,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        text = "No account? ",
+                        style = TextStyle(
+                            fontFamily = CormorantGaramond,
+                            fontSize = 13.sp,
+                            color = TextSecondary
+                        )
                     )
+                    TextButton(
+                        onClick = onNavigateToRegister,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Register now",
+                            style = TextStyle(
+                                fontFamily = CormorantGaramond,
+                                fontSize = 13.sp,
+                                fontStyle = FontStyle.Italic,
+                                color = GemGold,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-// Reusable Neakta text field
+// ─── Neakta Text Field ──────────────────────────────────────
 @Composable
 fun NeaktaTextField(
     value: String,
@@ -229,16 +333,27 @@ fun NeaktaTextField(
     Column {
         Text(
             text = label,
-            color = TextSecondary,
-            fontSize = 11.sp,
-            letterSpacing = 0.5.sp,
+            style = TextStyle(
+                fontFamily = Cinzel,
+                fontSize = 9.sp,
+                letterSpacing = 2.sp,
+                color = TextSecondary
+            ),
             modifier = Modifier.padding(bottom = 6.dp)
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = {
-                Text(text = placeholder, color = TextSecondary, fontSize = 13.sp)
+                Text(
+                    text = placeholder,
+                    style = TextStyle(
+                        fontFamily = CormorantGaramond,
+                        fontSize = 14.sp,
+                        fontStyle = FontStyle.Italic,
+                        color = TextSecondary
+                    )
+                )
             },
             visualTransformation = if (isPassword && !passwordVisible)
                 PasswordVisualTransformation() else VisualTransformation.None,
@@ -252,7 +367,7 @@ fun NeaktaTextField(
                             else
                                 Icons.Default.VisibilityOff,
                             contentDescription = null,
-                            tint = TextSecondary
+                            tint = GemGoldDim
                         )
                     }
                 }
@@ -260,13 +375,18 @@ fun NeaktaTextField(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GemGold,
-                unfocusedBorderColor = BorderGold,
-                focusedTextColor = TextPrimary,
-                unfocusedTextColor = TextPrimary,
-                cursorColor = GemGold,
-                focusedContainerColor = Color(0x1A17171C),
-                unfocusedContainerColor = Color(0x1A17171C)
+                focusedBorderColor      = GemGold,
+                unfocusedBorderColor    = BorderGold,
+                focusedTextColor        = TextPrimary,
+                unfocusedTextColor      = TextPrimary,
+                cursorColor             = GemGold,
+                focusedContainerColor   = Color(0x1A0C0A07),
+                unfocusedContainerColor = Color(0x1A0C0A07)
+            ),
+            textStyle = TextStyle(
+                fontFamily = CormorantGaramond,
+                fontSize = 15.sp,
+                color = TextPrimary
             ),
             singleLine = true
         )
