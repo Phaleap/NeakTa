@@ -1,15 +1,23 @@
 package com.example.neakta.ui.splash
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -17,20 +25,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.neakta.R
+import kotlinx.coroutines.delay
 
-// ✅ Color tokens defined locally
-private val GemGold = Color(0xFFE8C97A)
-private val NightBase = Color(0xFF0C0C0E)
-private val TextPrimary = Color(0xFFF0EDE6)
-private val TextSecondary = Color(0xFF9E9A92)
+// ─── Font Families ────────────────────────────────────────────────────────────
+private val CormorantGaramond = FontFamily(
+    Font(R.font.cormorant_garamond_light,    FontWeight.Light),
+    Font(R.font.cormorant_garamond_regular,  FontWeight.Normal),
+    Font(R.font.cormorant_garamond_italic,   FontWeight.Normal,  FontStyle.Italic),
+    Font(R.font.cormorant_garamond_semibold, FontWeight.SemiBold),
+)
 
+private val Cinzel = FontFamily(
+    Font(R.font.cinzel_regular,  FontWeight.Normal),
+    Font(R.font.cinzel_semibold, FontWeight.SemiBold),
+)
+
+// ─── Color Tokens ─────────────────────────────────────────────────────────────
+private val AntiqueGold    = Color(0xFFD4B870)
+private val AntiqueGoldDim = Color(0xFFD4B870).copy(alpha = 0.5f)
+private val TextPrimary    = Color(0xFFEEE6D2)
+private val TextMuted      = Color(0xFFB4A88C).copy(alpha = 0.70f)
+private val RuleColor      = Color(0xFFD4B870).copy(alpha = 0.35f)
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 @Composable
 fun SplashScreen(
-    onExploreClick: () -> Unit
+    onGetStarted: () -> Unit
 ) {
+    var visible by remember { mutableStateOf(false) }
+
+    val alphaAnim by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(900),
+        label = "alpha"
+    )
+
+    LaunchedEffect(Unit) {
+        delay(200)
+        visible = true
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Bayon photo — full bleed
+        // ── Background (Bayon image) ─────────────────────────
         AsyncImage(
             model = R.drawable.bayon_intro,
             contentDescription = null,
@@ -38,80 +75,150 @@ fun SplashScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Gradient — clear at top, dark at bottom
+        // ── Dark overlay ─────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colorStops = arrayOf(
-                            0.0f to Color(0x00000000),
-                            0.45f to Color(0x00000000),
-                            0.65f to Color(0xBB0C0C0E),
-                            1.0f to Color(0xFF0C0C0E)
+                        listOf(
+                            Color.Transparent,
+                            Color(0xCC0C0A07),
+                            Color(0xFF0C0A07)
                         )
                     )
                 )
         )
 
-        // Bottom content
+        // ── Center Content ───────────────────────────────────
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 28.dp, vertical = 36.dp),
+                .fillMaxSize()
+                .padding(horizontal = 32.dp)
+                .alpha(alphaAnim),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo
-            Text(
-                text = "NEAKTA ✦",
-                color = GemGold,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
+
+            // 🟡 Angkor Wat silhouette
+            AsyncImage(
+                model = R.drawable.angkorwat,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
+                contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Hook text
+            // 🟡 Circular logo placeholder
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .border(1.dp, AntiqueGold, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "ANGKOR\nWAT LOGO",
+                    textAlign = TextAlign.Center,
+                    style = TextStyle(
+                        fontSize = 10.sp,
+                        color = AntiqueGold,
+                        letterSpacing = 1.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // 🟡 Title
             Text(
-                text = "Every corner of Cambodia\nhides a story.",
-                color = TextPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 30.sp,
-                textAlign = TextAlign.Center
+                text = "CAMBODIA",
+                style = TextStyle(
+                    fontFamily = Cinzel,
+                    fontSize = 26.sp,
+                    letterSpacing = 6.sp,
+                    color = TextPrimary
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Sub text
             Text(
-                text = "Be the one who finds it.",
-                color = TextSecondary,
-                fontSize = 13.sp,
-                fontStyle = FontStyle.Italic
+                text = "HIDDEN GEMS",
+                style = TextStyle(
+                    fontFamily = Cinzel,
+                    fontSize = 14.sp,
+                    letterSpacing = 4.sp,
+                    color = AntiqueGold
+                )
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // CTA Button
-            Button(
-                onClick = onExploreClick,
+            // Divider
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(1.dp)
+                    .background(RuleColor)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Find. Share. Preserve.",
+                style = TextStyle(
+                    fontFamily = CormorantGaramond,
+                    fontSize = 14.sp,
+                    color = TextMuted,
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+
+        // ── Bottom Button ────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            OutlinedButton(
+                onClick = onGetStarted,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GemGold
+                    .height(54.dp),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, AntiqueGold),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = AntiqueGold
                 )
             ) {
                 Text(
-                    text = "Explore more →",
-                    color = NightBase,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    "GET STARTED",
+                    style = TextStyle(
+                        fontFamily = Cinzel,
+                        fontSize = 12.sp,
+                        letterSpacing = 3.sp
+                    )
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "EXPLORE CAMBODIA",
+                style = TextStyle(
+                    fontFamily = Cinzel,
+                    fontSize = 10.sp,
+                    letterSpacing = 2.sp,
+                    color = AntiqueGoldDim
+                )
+            )
         }
     }
 }

@@ -7,8 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.neakta.ui.auth.LoginScreen      // ← this line
-import com.example.neakta.ui.splash.SplashScreen
+import com.example.neakta.ui.auth.LoginScreen
 import com.example.neakta.ui.splash.SplashScreen
 import com.example.neakta.ui.theme.NeakTaTheme
 
@@ -26,7 +25,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable("splash") {
                         SplashScreen(
-                            onExploreClick = {
+                            onGetStarted = {
                                 navController.navigate("login")
                             }
                         )
@@ -34,8 +33,7 @@ class MainActivity : ComponentActivity() {
                     composable("login") {
                         LoginScreen(
                             onLoginSuccess = {
-                                // TODO: navigate to map screen later
-                                navController.navigate("login")
+                                // TODO: navigate to map/home screen later
                             },
                             onNavigateToRegister = {
                                 // TODO: navigate to register screen later
