@@ -3,8 +3,10 @@ package com.example.neakta.ui.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -29,31 +31,29 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.neakta.R
 
-// ─── Color Tokens ───────────────────────────────────────────
-// (Cinzel, CormorantGaramond, CardShape are in AuthTheme.kt)
-val GemGold       = Color(0xFFD4B870)
-val GemGoldDim    = Color(0xFFD4B870).copy(alpha = 0.5f)
-val NightBase     = Color(0xFF0C0A07)
-val TextPrimary   = Color(0xFFEEE6D2)
-val TextSecondary = Color(0xFFB4A88C).copy(alpha = 0.70f)
-val BorderGold    = Color(0xFFD4B870).copy(alpha = 0.30f)
-val RuleColor     = Color(0xFFD4B870).copy(alpha = 0.35f)
+// Re-uses all color tokens and font families defined in LoginScreen.kt
+// (GemGold, GemGoldDim, NightBase, TextPrimary, TextSecondary, BorderGold, RuleColor,
+//  CormorantGaramond, Cinzel, CardShape — all already declared there)
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    val loginState by viewModel.loginState.collectAsStateWithLifecycle()
+    val registerState by viewModel.registerState.collectAsStateWithLifecycle()
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var username        by remember { mutableStateOf("") }
+    var email           by remember { mutableStateOf("") }
+    var password        by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var province        by remember { mutableStateOf("") }
+    var passwordVisible        by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(loginState) {
-        if (loginState is LoginState.Success) {
-            onLoginSuccess()
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterState.Success) {
+            onRegisterSuccess()
             viewModel.resetState()
         }
     }
@@ -62,7 +62,7 @@ fun LoginScreen(
 
         // ── Background photo ────────────────────────────────
         AsyncImage(
-            model = R.drawable.bayon_intro,
+            model = R.drawable.bayon_intro,        // same hero image as login
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -84,11 +84,11 @@ fun LoginScreen(
                 )
         )
 
-        // ── TOP: NEAKTA ─────────────────────────────────────
+        // ── TOP: NEAKTA wordmark ────────────────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 72.dp),
+                .padding(top = 65.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -126,14 +126,15 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 28.dp)
                     .padding(top = 28.dp, bottom = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // SIGN IN label
+                // CREATE ACCOUNT label
                 Text(
-                    text = "SIGN IN",
+                    text = "CREATE ACCOUNT",
                     style = TextStyle(
                         fontFamily = Cinzel,
                         fontSize = 11.sp,
@@ -154,6 +155,17 @@ fun LoginScreen(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                // Username field
+                NeaktaTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    placeholder = "Username",
+                    label = "USERNAME",
+                    keyboardType = KeyboardType.Text
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Email field
                 NeaktaTextField(
@@ -177,38 +189,43 @@ fun LoginScreen(
                     onPasswordToggle = { passwordVisible = !passwordVisible }
                 )
 
-                // Forgot password
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    TextButton(
-                        onClick = { },
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text(
-                            text = "Forgot password?",
-                            style = TextStyle(
-                                fontFamily = CormorantGaramond,
-                                fontSize = 12.sp,
-                                fontStyle = FontStyle.Italic,
-                                color = GemGoldDim
-                            )
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // Confirm password field
+                NeaktaTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    placeholder = "Confirm password",
+                    label = "CONFIRM PASSWORD",
+                    isPassword = true,
+                    passwordVisible = confirmPasswordVisible,
+                    onPasswordToggle = { confirmPasswordVisible = !confirmPasswordVisible }
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Province field
+                NeaktaTextField(
+                    value = province,
+                    onValueChange = { province = it },
+                    placeholder = "Choose your province",
+                    label = "PROVINCE",
+                    keyboardType = KeyboardType.Text
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Error message
-                if (loginState is LoginState.Error) {
+                if (registerState is RegisterState.Error) {
                     Text(
-                        text = (loginState as LoginState.Error).message,
+                        text = (registerState as RegisterState.Error).message,
                         color = Color(0xFFE87A7A),
                         fontSize = 11.sp,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
 
-                // LOG IN button
+                // REGISTER button — identical shell to LOG IN button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -229,7 +246,7 @@ fun LoginScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (loginState is LoginState.Loading) {
+                    if (registerState is RegisterState.Loading) {
                         CircularProgressIndicator(
                             color = GemGold,
                             strokeWidth = 2.dp,
@@ -237,8 +254,16 @@ fun LoginScreen(
                         )
                     } else {
                         Button(
-                            onClick = { viewModel.login(email, password) },
-                            enabled = loginState !is LoginState.Loading,
+                            onClick = {
+                                viewModel.register(
+                                    username = username,
+                                    email = email,
+                                    password = password,
+                                    confirmPassword = confirmPassword,
+                                    province = province
+                                )
+                            },
+                            enabled = registerState !is RegisterState.Loading,
                             modifier = Modifier.fillMaxSize(),
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(
@@ -248,7 +273,7 @@ fun LoginScreen(
                             elevation = null
                         ) {
                             Text(
-                                text = "LOG IN",
+                                text = "REGISTER",
                                 style = TextStyle(
                                     fontFamily = Cinzel,
                                     fontSize = 12.sp,
@@ -262,14 +287,14 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Register link
+                // Back to login link
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "No account? ",
+                        text = "Already have an account? ",
                         style = TextStyle(
                             fontFamily = CormorantGaramond,
                             fontSize = 13.sp,
@@ -277,11 +302,11 @@ fun LoginScreen(
                         )
                     )
                     TextButton(
-                        onClick = onNavigateToRegister,
+                        onClick = onNavigateToLogin,
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
-                            text = "Register now",
+                            text = "Log in now",
                             style = TextStyle(
                                 fontFamily = CormorantGaramond,
                                 fontSize = 13.sp,
@@ -294,80 +319,5 @@ fun LoginScreen(
                 }
             }
         }
-    }
-}
-
-// ─── Neakta Text Field ──────────────────────────────────────
-@Composable
-fun NeaktaTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    label: String,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    isPassword: Boolean = false,
-    passwordVisible: Boolean = false,
-    onPasswordToggle: (() -> Unit)? = null
-) {
-    Column {
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = Cinzel,
-                fontSize = 9.sp,
-                letterSpacing = 2.sp,
-                color = TextSecondary
-            ),
-            modifier = Modifier.padding(bottom = 6.dp)
-        )
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = {
-                Text(
-                    text = placeholder,
-                    style = TextStyle(
-                        fontFamily = CormorantGaramond,
-                        fontSize = 14.sp,
-                        fontStyle = FontStyle.Italic,
-                        color = TextSecondary
-                    )
-                )
-            },
-            visualTransformation = if (isPassword && !passwordVisible)
-                PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            trailingIcon = if (isPassword) {
-                {
-                    IconButton(onClick = { onPasswordToggle?.invoke() }) {
-                        Icon(
-                            imageVector = if (passwordVisible)
-                                Icons.Default.Visibility
-                            else
-                                Icons.Default.VisibilityOff,
-                            contentDescription = null,
-                            tint = GemGoldDim
-                        )
-                    }
-                }
-            } else null,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor      = GemGold,
-                unfocusedBorderColor    = BorderGold,
-                focusedTextColor        = TextPrimary,
-                unfocusedTextColor      = TextPrimary,
-                cursorColor             = GemGold,
-                focusedContainerColor   = Color(0x1A0C0A07),
-                unfocusedContainerColor = Color(0x1A0C0A07)
-            ),
-            textStyle = TextStyle(
-                fontFamily = CormorantGaramond,
-                fontSize = 15.sp,
-                color = TextPrimary
-            ),
-            singleLine = true
-        )
     }
 }
