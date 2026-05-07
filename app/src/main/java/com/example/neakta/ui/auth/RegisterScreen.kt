@@ -5,11 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,8 +17,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,10 +24,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.neakta.R
-
-// Re-uses all color tokens and font families defined in LoginScreen.kt
-// (GemGold, GemGoldDim, NightBase, TextPrimary, TextSecondary, BorderGold, RuleColor,
-//  CormorantGaramond, Cinzel, CardShape — all already declared there)
 
 @Composable
 fun RegisterScreen(
@@ -47,7 +37,6 @@ fun RegisterScreen(
     var email           by remember { mutableStateOf("") }
     var password        by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var province        by remember { mutableStateOf("") }
     var passwordVisible        by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
@@ -62,7 +51,7 @@ fun RegisterScreen(
 
         // ── Background photo ────────────────────────────────
         AsyncImage(
-            model = R.drawable.bayon_intro,        // same hero image as login
+            model = R.drawable.bayon_intro,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -88,7 +77,7 @@ fun RegisterScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 65.dp),
+                .padding(top = 72.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -108,17 +97,11 @@ fun RegisterScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(
-                    color = Color(0xF00C0A07),
-                    shape = CardShape
-                )
+                .background(color = Color(0xF00C0A07), shape = CardShape)
                 .border(
                     width = 1.dp,
                     brush = Brush.verticalGradient(
-                        listOf(
-                            GemGold.copy(alpha = 0.4f),
-                            Color.Transparent
-                        )
+                        listOf(GemGold.copy(alpha = 0.4f), Color.Transparent)
                     ),
                     shape = CardShape
                 )
@@ -156,18 +139,17 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Username field
+                // Username
                 NeaktaTextField(
                     value = username,
                     onValueChange = { username = it },
                     placeholder = "Username",
-                    label = "USERNAME",
-                    keyboardType = KeyboardType.Text
+                    label = "USERNAME"
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Email field
+                // Email
                 NeaktaTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -178,7 +160,7 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Password field
+                // Password
                 NeaktaTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -191,7 +173,7 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Confirm password field
+                // Confirm password
                 NeaktaTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -200,17 +182,6 @@ fun RegisterScreen(
                     isPassword = true,
                     passwordVisible = confirmPasswordVisible,
                     onPasswordToggle = { confirmPasswordVisible = !confirmPasswordVisible }
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Province field
-                NeaktaTextField(
-                    value = province,
-                    onValueChange = { province = it },
-                    placeholder = "Choose your province",
-                    label = "PROVINCE",
-                    keyboardType = KeyboardType.Text
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -225,7 +196,7 @@ fun RegisterScreen(
                     )
                 }
 
-                // REGISTER button — identical shell to LOG IN button
+                // REGISTER button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -256,11 +227,10 @@ fun RegisterScreen(
                         Button(
                             onClick = {
                                 viewModel.register(
-                                    username = username,
-                                    email = email,
-                                    password = password,
-                                    confirmPassword = confirmPassword,
-                                    province = province
+                                    username        = username,
+                                    email           = email,
+                                    password        = password,
+                                    confirmPassword = confirmPassword
                                 )
                             },
                             enabled = registerState !is RegisterState.Loading,
@@ -287,7 +257,7 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Back to login link
+                // Back to login
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
