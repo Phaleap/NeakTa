@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.neakta.ui.onboarding.OnboardingScreen
 
 @Composable
 fun NeaktaNavGraph() {
@@ -52,7 +53,7 @@ fun NeaktaNavGraph() {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("home") {
+                    navController.navigate("onboarding") {  // ← was "home"
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -89,6 +90,16 @@ fun NeaktaNavGraph() {
                     color = Color(0xFFD4B870)
                 )
             }
+        }
+        // Add this new composable:
+        composable("onboarding") {
+            OnboardingScreen(
+                onFinished = {
+                    navController.navigate("home") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
