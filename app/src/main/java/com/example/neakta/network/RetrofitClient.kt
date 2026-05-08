@@ -9,7 +9,7 @@ object RetrofitClient {
 
     // 🔁 Change this to your actual backend URL
     // For emulator testing: use 10.0.2.2 instead of localhost
-    private const val BASE_URL = ""
+    private const val BASE_URL = "http://localhost:8080/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

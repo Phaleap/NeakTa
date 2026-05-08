@@ -11,6 +11,13 @@ import com.example.neakta.ui.auth.AuthViewModel
 import com.example.neakta.ui.auth.LoginScreen
 import com.example.neakta.ui.auth.RegisterScreen
 import com.example.neakta.ui.splash.SplashScreen
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun NeaktaNavGraph() {
@@ -26,7 +33,7 @@ fun NeaktaNavGraph() {
     // Decide where to start:
     // - already logged in  → go straight to home (TODO)
     // - first launch       → splash (will route to onboarding later)
-    val startDestination = if (session.isLoggedIn()) "home" else "splash"
+    val startDestination = "splash"
 
     NavHost(
         navController    = navController,
@@ -71,13 +78,17 @@ fun NeaktaNavGraph() {
         }
 
         composable("home") {
-            // TODO: replace with real HomeScreen
-            // HomeScreen(onLogout = {
-            //     session.clearSession()
-            //     navController.navigate("login") {
-            //         popUpTo("home") { inclusive = true }
-            //     }
-            // })
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0C0A07)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "HOME — Coming Soon",
+                    color = Color(0xFFD4B870)
+                )
+            }
         }
     }
 }

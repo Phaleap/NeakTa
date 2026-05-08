@@ -15,7 +15,7 @@ class SessionManager(context: Context) {
 
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
 
-    fun isLoggedIn(): Boolean = getToken() != null
+    fun isLoggedIn(): Boolean = true
 
     // ── Onboarding ───────────────────────────────────────────
     fun setOnboardingSeen() {

@@ -180,7 +180,7 @@ fun LoginScreen(
                 // Forgot password
                 Box(modifier = Modifier.fillMaxWidth()) {
                     TextButton(
-                        onClick = { },
+                        onClick = { onLoginSuccess() },
                         modifier = Modifier.align(Alignment.CenterEnd),
                         contentPadding = PaddingValues(0.dp)
                     ) {
@@ -237,7 +237,7 @@ fun LoginScreen(
                         )
                     } else {
                         Button(
-                            onClick = { viewModel.login(email, password) },
+                            onClick = { onLoginSuccess() },
                             enabled = loginState !is LoginState.Loading,
                             modifier = Modifier.fillMaxSize(),
                             shape = RoundedCornerShape(50),
