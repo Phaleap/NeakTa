@@ -72,4 +72,5 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 }

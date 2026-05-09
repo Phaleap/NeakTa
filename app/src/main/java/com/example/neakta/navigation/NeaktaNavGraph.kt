@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.neakta.ui.home.HomeScreen
 import com.example.neakta.ui.onboarding.OnboardingScreen
 
 @Composable
@@ -79,17 +80,7 @@ fun NeaktaNavGraph() {
         }
 
         composable("home") {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF0C0A07)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "HOME — Coming Soon",
-                    color = Color(0xFFD4B870)
-                )
-            }
+            HomeScreen()
         }
         // Add this new composable:
         composable("onboarding") {
