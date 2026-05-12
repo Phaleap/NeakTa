@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeakTa Database Schema Guide</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --panel: rgba(255, 251, 244, 0.92);
+      --panel-strong: #fffdf8;
+      --text: #2f2419;
+      --muted: #6c5a49;
+      --line: rgba(97, 73, 44, 0.16);
+      --accent: #9f5b2f;
+      --accent-soft: rgba(159, 91, 47, 0.12);
+      --secondary: #265c4b;
+      --secondary-soft: rgba(38, 92, 75, 0.12);
+      --highlight: #d39b2b;
+      --shadow: 0 20px 50px rgba(63, 43, 20, 0.12);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-body: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(211, 155, 43, 0.16), transparent 25%),
+        radial-gradient(circle at top right, rgba(38, 92, 75, 0.14), transparent 28%),
+        linear-gradient(180deg, #efe4d2 0%, var(--bg) 42%, #f9f5ef 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1280px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(159, 91, 47, 0.18), transparent 68%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-display);
+      margin: 0;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      font-size: clamp(2.3rem, 4vw, 4rem);
+      line-height: 1.05;
+      margin-top: 18px;
+      max-width: 780px;
+    }
+
+    .hero p {
+      max-width: 780px;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--muted);
+      margin: 18px 0 0;
+    }
+
+    .hero-grid,
+    .summary-grid,
+    .module-grid,
+    .relationship-grid,
+    .legend-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1.8fr 1fr;
+      margin-top: 28px;
+      align-items: end;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .stat {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.8rem;
+      color: var(--secondary);
+      margin-bottom: 8px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .quick-notes {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, rgba(38, 92, 75, 0.08), rgba(38, 92, 75, 0.03));
+      border: 1px solid rgba(38, 92, 75, 0.16);
+    }
+
+    .quick-notes h3 {
+      margin-bottom: 10px;
+      color: var(--secondary);
+    }
+
+    .quick-notes p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+    }
+
+    .sidebar h2,
+    .content h2 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    .sidebar p,
+    .content p {
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 0 0 14px;
+    }
+
+    .search-wrap {
+      margin: 18px 0 16px;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font: inherit;
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(159, 91, 47, 0.12);
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0 0;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .chip:hover,
+    .chip.active {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 10px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .summary-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .summary-card p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .legend-grid {
+      grid-template-columns: repeat(2, 1fr);
+      margin-top: 16px;
+    }
+
+    .legend-item {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .label {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 5px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .pk {
+      background: rgba(211, 155, 43, 0.16);
+      color: #8a6205;
+    }
+
+    .fk {
+      background: rgba(38, 92, 75, 0.14);
+      color: #1b5544;
+    }
+
+    .relation {
+      background: rgba(159, 91, 47, 0.12);
+      color: #8b4d26;
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(2, 1fr);
+      margin-top: 18px;
+    }
+
+    .module-card {
+      position: relative;
+      padding: 22px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 243, 236, 0.94));
+      overflow: hidden;
+      transition: transform 220ms ease, box-shadow 220ms ease;
+    }
+
+    .module-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(63, 43, 20, 0.12);
+    }
+
+    .module-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight), var(--secondary));
+    }
+
+    .module-card h3 {
+      font-size: 1.35rem;
+      margin-bottom: 10px;
+    }
+
+    .module-card p {
+      margin: 0 0 14px;
+      font-size: 0.96rem;
+    }
+
+    .table-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .table-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .relationship-grid {
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 18px;
+    }
+
+    .relationship-card {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .relationship-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .relationship-card code {
+      display: block;
+      margin: 10px 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f3ede4;
+      color: #704724;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    .table-section {
+      margin-top: 18px;
+    }
+
+    .table-card {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .table-card.hidden {
+      display: none;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .table-header h3 {
+      font-size: 1.35rem;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #f2ebe1;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .tag.module {
+      background: var(--secondary-soft);
+      color: var(--secondary);
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .field {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .field strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+
+    .field small {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .relations {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--line);
+    }
+
+    .relations h4 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--secondary);
+    }
+
+    .relations ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .empty-state {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px dashed var(--line);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.66);
+    }
+
+    .footer-note {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1100px) {
+      .layout,
+      .hero-grid,
+      .summary-grid,
+      .module-grid,
+      .relationship-grid,
+      .legend-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .shell {
+        width: min(100% - 20px, 1280px);
+        padding-top: 20px;
+      }
+
+      .hero,
+      .panel {
+        padding: 20px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .table-header {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">NeakTa Database Presentation</div>
+      <h1>One page to explain your modules, tables, PK, FK, and relationships clearly.</h1>
+      <p>
+        This page organizes your schema into business modules so it is easier to explain in class,
+        during a project demo, or while discussing your system design. You can filter by module,
+        search any table name, and quickly point out primary keys, foreign keys, and relationship types.
+      </p>
+
+      <div class="hero-grid">
+        <div class="stats">
+          <div class="stat">
+            <strong>35</strong>
+            <span>Total tables in the schema, including the car purchase flow.</span>
+          </div>
+          <div class="stat">
+            <strong>11</strong>
+            <span>Functional modules to make the explanation easier and more organized.</span>
+          </div>
+          <div class="stat">
+            <strong>PK</strong>
+            <span>Primary key means the main unique ID for each table.</span>
+          </div>
+          <div class="stat">
+            <strong>FK</strong>
+            <span>Foreign key means the table connects to another table.</span>
+          </div>
+        </div>
+
+        <div class="quick-notes">
+          <h3>Fast explanation idea</h3>
+          <p>
+            Start from <strong>Users</strong>, move to <strong>Products</strong>, then show
+            <strong>Orders</strong>, and finish with <strong>Car Purchase Flow</strong>. That gives
+            people the full business story from account creation to buying merchandise or cars.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="panel sidebar">
+        <h2>Guide Panel</h2>
+        <p>
+          Use this panel to filter the database by module. This helps you explain the system in smaller
+          parts instead of reading every table from top to bottom.
+        </p>
+
+        <div class="search-wrap">
+          <input id="searchInput" type="text" placeholder="Search table, field, module..." />
+        </div>
+
+        <div class="chip-group" id="moduleFilters"></div>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="label pk">PK</span>
+            <p>Primary Key: unique identifier in a table. Example: <strong>user_id</strong>.</p>
+          </div>
+          <div class="legend-item">
+            <span class="label fk">FK</span>
+            <p>Foreign Key: connects one table to another. Example: <strong>users.role_id</strong>.</p>
+          </div>
+          <div class="legend-item">
+            <span class="label relation">1 to Many</span>
+            <p>One record connects to many records. Example: one user can place many orders.</p>
+          </div>
+          <div class="legend-item">
+            <span class="label relation">Many to Many</span>
+            <p>Usually built through a bridge table. Example: products and discounts.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="panel">
+          <h2>Schema Summary</h2>
+          <p>
+            Your schema is a hybrid e-commerce and motorsport business system. It handles user management,
+            product catalog, inventory, orders, payments, delivery, after-sales support, and a special flow
+            for high-value car purchases.
+          </p>
+
+          <div class="summary-grid">
+            <article class="summary-card">
+              <h3>Core business idea</h3>
+              <p>
+                Users browse products, add items to cart or wishlist, place orders, pay, receive shipment,
+                and possibly review, return, or refund items later.
+              </p>
+            </article>
+            <article class="summary-card">
+              <h3>Car-specific idea</h3>
+              <p>
+                Cars are not treated like normal merchandise. They go through request review, appointment,
+                approval, and a separate car order process.
+              </p>
+            </article>
+            <article class="summary-card">
+              <h3>Design strength</h3>
+              <p>
+                The schema clearly separates operational areas into modules, which is good for scaling,
+                explaining, and maintaining the system.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" style="margin-top: 22px;">
+          <h2>Module Organization</h2>
+          <p>
+            These groups are made for explanation. You can use them as sections in your report, slide deck,
+            or presentation.
+          </p>
+          <div class="module-grid" id="moduleGrid"></div>
+        </section>
+
+        <section class="panel" style="margin-top: 22px;">
+          <h2>Main Relationship Types</h2>
+          <p>
+            These are the relationship examples you specifically asked to show on the website.
+          </p>
+          <div class="relationship-grid" id="relationshipGrid"></div>
+        </section>
+
+        <section class="panel table-section" style="margin-top: 22px;">
+          <h2>Table Breakdown</h2>
+          <p>
+            Each card shows the purpose of the table, its main PK/FK fields, and the most important
+            relationships. Use search and filters to narrow the list while presenting.
+          </p>
+          <div id="tableCards"></div>
+          <div id="emptyState" class="empty-state">
+            No table matches your current search or filter. Try another keyword or select a different module.
+          </div>
+          <p class="footer-note">
+            Note: the last line in your raw schema, <strong>products.product_id &lt; products.category_id</strong>,
+            looks incorrect, so this page does not treat it as a real relationship.
+          </p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const modules = [
+      {
+        id: "all",
+        name: "All Modules",
+        description: "Show the full schema."
+      },
+      {
+        id: "identity",
+        name: "User Management",
+        description: "Roles, users, addresses, and activity history."
+      },
+      {
+        id: "motorsport",
+        name: "Motorsport Domain",
+        description: "Teams, drivers, car models, and racing identity."
+      },
+      {
+        id: "catalog",
+        name: "Catalog",
+        description: "Categories, brands, suppliers, products, and product images."
+      },
+      {
+        id: "variant",
+        name: "Variants & Warranty",
+        description: "Product options and warranty setup."
+      },
+      {
+        id: "inventory",
+        name: "Inventory",
+        description: "Stock quantities and movement tracking."
+      },
+      {
+        id: "marketing",
+        name: "Discounts & Promotions",
+        description: "Discounts, promotions, and coupons."
+      },
+      {
+        id: "shopping",
+        name: "Shopping",
+        description: "Carts, wishlists, and customer interest before checkout."
+      },
+      {
+        id: "order",
+        name: "Orders",
+        description: "Orders, items, shipping, payment, and status tracking."
+      },
+      {
+        id: "service",
+        name: "After-Sales",
+        description: "Reviews, returns, and refunds."
+      },
+      {
+        id: "carflow",
+        name: "Car Purchase Flow",
+        description: "Request, appointment, and special car order flow."
+      }
+    ];
+
+    const tables = [
+      {
+        name: "roles",
+        module: "identity",
+        purpose: "Defines user access levels such as admin, customer, or staff.",
+        fields: [
+          { name: "role_id", meta: "PK, auto increment" },
+          { name: "role_name", meta: "Unique role name" },
+          { name: "description", meta: "Role description" }
+        ],
+        relationships: ["One role can be assigned to many users."]
+      },
+      {
+        name: "users",
+        module: "identity",
+        purpose: "Stores the main account data for every person using the system.",
+        fields: [
+          { name: "user_id", meta: "PK, auto increment" },
+          { name: "role_id", meta: "FK -> roles.role_id" },
+          { name: "email", meta: "Unique login email" },
+          { name: "status", meta: "Default active" }
+        ],
+        relationships: [
+          "Many users belong to one role.",
+          "One user can have many addresses, orders, reviews, logs, and more."
+        ]
+      },
+      {
+        name: "user_addresses",
+        module: "identity",
+        purpose: "Stores delivery or billing addresses for each user.",
+        fields: [
+          { name: "address_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "address_type", meta: "home, office, billing, shipping" },
+          { name: "is_default", meta: "Default address flag" }
+        ],
+        relationships: ["One user can have many addresses."]
+      },
+      {
+        name: "activity_logs",
+        module: "identity",
+        purpose: "Tracks actions performed by users in the system.",
+        fields: [
+          { name: "log_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "action", meta: "Action name" },
+          { name: "record_id", meta: "Affected record" }
+        ],
+        relationships: ["One user can create many activity log records."]
+      },
+      {
+        name: "suppliers",
+        module: "catalog",
+        purpose: "Stores supplier companies that provide products.",
+        fields: [
+          { name: "supplier_id", meta: "PK, auto increment" },
+          { name: "supplier_name", meta: "Supplier name" },
+          { name: "status", meta: "Default active" }
+        ],
+        relationships: ["One supplier can provide many products."]
+      },
+      {
+        name: "categories",
+        module: "catalog",
+        purpose: "Groups products into categories and sub-categories.",
+        fields: [
+          { name: "category_id", meta: "PK, auto increment" },
+          { name: "category_name", meta: "Unique category name" },
+          { name: "parent_category_id", meta: "FK -> categories.category_id" }
+        ],
+        relationships: [
+          "One category can have many products.",
+          "Self-reference: one parent category can have many child categories."
+        ]
+      },
+      {
+        name: "brands",
+        module: "catalog",
+        purpose: "Stores brand information for products.",
+        fields: [
+          { name: "brand_id", meta: "PK, auto increment" },
+          { name: "brand_name", meta: "Unique brand name" },
+          { name: "country", meta: "Brand country" }
+        ],
+        relationships: ["One brand can be used by many products."]
+      },
+      {
+        name: "teams",
+        module: "motorsport",
+        purpose: "Represents motorsport teams.",
+        fields: [
+          { name: "team_id", meta: "PK, auto increment" },
+          { name: "team_name", meta: "Unique team name" },
+          { name: "team_principal", meta: "Team principal" }
+        ],
+        relationships: [
+          "One team can have many drivers.",
+          "One team can have many car models."
+        ]
+      },
+      {
+        name: "drivers",
+        module: "motorsport",
+        purpose: "Stores race driver information.",
+        fields: [
+          { name: "driver_id", meta: "PK, auto increment" },
+          { name: "team_id", meta: "FK -> teams.team_id" },
+          { name: "car_number", meta: "Racing car number" }
+        ],
+        relationships: ["Many drivers can belong to one team."]
+      },
+      {
+        name: "car_models",
+        module: "motorsport",
+        purpose: "Stores race car models connected to teams and optionally drivers.",
+        fields: [
+          { name: "car_model_id", meta: "PK, auto increment" },
+          { name: "team_id", meta: "FK -> teams.team_id" },
+          { name: "driver_id", meta: "FK -> drivers.driver_id" },
+          { name: "season_year", meta: "Required season year" }
+        ],
+        relationships: [
+          "Many car models can belong to one team.",
+          "A car model can be linked to one driver."
+        ]
+      },
+      {
+        name: "warranties",
+        module: "variant",
+        purpose: "Defines warranty rules and duration for products.",
+        fields: [
+          { name: "warranty_id", meta: "PK, auto increment" },
+          { name: "warranty_name", meta: "Warranty label" },
+          { name: "duration_months", meta: "Required duration" }
+        ],
+        relationships: ["One warranty can be attached to many products."]
+      },
+      {
+        name: "products",
+        module: "catalog",
+        purpose: "The main product table for both cars and merchandise.",
+        fields: [
+          { name: "product_id", meta: "PK, auto increment" },
+          { name: "category_id", meta: "FK -> categories.category_id" },
+          { name: "brand_id", meta: "FK -> brands.brand_id" },
+          { name: "supplier_id", meta: "FK -> suppliers.supplier_id" },
+          { name: "car_model_id", meta: "FK -> car_models.car_model_id" },
+          { name: "warranty_id", meta: "FK -> warranties.warranty_id" },
+          { name: "sku", meta: "Unique stock keeping unit" },
+          { name: "product_type", meta: "car or merchandise" }
+        ],
+        relationships: [
+          "Many products belong to one category.",
+          "Many products can share one brand, supplier, or warranty.",
+          "A car product can point to one car model."
+        ]
+      },
+      {
+        name: "product_images",
+        module: "catalog",
+        purpose: "Stores multiple images for each product.",
+        fields: [
+          { name: "image_id", meta: "PK, auto increment" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "is_main", meta: "Main image flag" }
+        ],
+        relationships: ["One product can have many images."]
+      },
+      {
+        name: "product_variants",
+        module: "variant",
+        purpose: "Stores product options like size, color, or edition.",
+        fields: [
+          { name: "variant_id", meta: "PK, auto increment" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "sku", meta: "Variant unique SKU" },
+          { name: "extra_price", meta: "Additional price" }
+        ],
+        relationships: ["One product can have many variants."]
+      },
+      {
+        name: "inventory",
+        module: "inventory",
+        purpose: "Stores current stock for a product or product variant.",
+        fields: [
+          { name: "inventory_id", meta: "PK, auto increment" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "variant_id", meta: "FK -> product_variants.variant_id" },
+          { name: "stock_quantity", meta: "Current quantity" }
+        ],
+        relationships: [
+          "One product can have many inventory entries.",
+          "One variant can map to inventory tracking."
+        ]
+      },
+      {
+        name: "stock_movements",
+        module: "inventory",
+        purpose: "Records stock in, stock out, return, damage, or manual adjustments.",
+        fields: [
+          { name: "movement_id", meta: "PK, auto increment" },
+          { name: "inventory_id", meta: "FK -> inventory.inventory_id" },
+          { name: "movement_type", meta: "IN, OUT, RETURN, DAMAGE, ADJUSTMENT" },
+          { name: "quantity", meta: "Movement quantity" }
+        ],
+        relationships: ["One inventory record can have many stock movement records."]
+      },
+      {
+        name: "discounts",
+        module: "marketing",
+        purpose: "Defines discount campaigns.",
+        fields: [
+          { name: "discount_id", meta: "PK, auto increment" },
+          { name: "discount_type", meta: "percentage or fixed" },
+          { name: "discount_value", meta: "Discount amount" }
+        ],
+        relationships: ["Connected to products through product_discounts."]
+      },
+      {
+        name: "product_discounts",
+        module: "marketing",
+        purpose: "Bridge table between products and discounts.",
+        fields: [
+          { name: "product_discount_id", meta: "PK, auto increment" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "discount_id", meta: "FK -> discounts.discount_id" }
+        ],
+        relationships: ["Many-to-many between products and discounts."]
+      },
+      {
+        name: "promotions",
+        module: "marketing",
+        purpose: "Stores promotion campaigns such as seasonal or event-based offers.",
+        fields: [
+          { name: "promotion_id", meta: "PK, auto increment" },
+          { name: "promotion_type", meta: "seasonal, bundle, free_shipping, race_event" },
+          { name: "status", meta: "Default active" }
+        ],
+        relationships: ["Connected to products through product_promotions."]
+      },
+      {
+        name: "product_promotions",
+        module: "marketing",
+        purpose: "Bridge table between products and promotions.",
+        fields: [
+          { name: "product_promotion_id", meta: "PK, auto increment" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "promotion_id", meta: "FK -> promotions.promotion_id" }
+        ],
+        relationships: ["Many-to-many between products and promotions."]
+      },
+      {
+        name: "coupons",
+        module: "marketing",
+        purpose: "Stores coupon codes for order-level discounts.",
+        fields: [
+          { name: "coupon_id", meta: "PK, auto increment" },
+          { name: "code", meta: "Unique coupon code" },
+          { name: "discount_type", meta: "percentage or fixed" }
+        ],
+        relationships: ["Connected to orders through order_coupons."]
+      },
+      {
+        name: "carts",
+        module: "shopping",
+        purpose: "Represents a user shopping cart.",
+        fields: [
+          { name: "cart_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" }
+        ],
+        relationships: [
+          "One user can own a cart.",
+          "One cart can contain many cart items."
+        ]
+      },
+      {
+        name: "cart_items",
+        module: "shopping",
+        purpose: "Stores each item inside a shopping cart.",
+        fields: [
+          { name: "cart_item_id", meta: "PK, auto increment" },
+          { name: "cart_id", meta: "FK -> carts.cart_id" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "variant_id", meta: "FK -> product_variants.variant_id" }
+        ],
+        relationships: [
+          "Many cart items belong to one cart.",
+          "Many cart items can point to one product."
+        ]
+      },
+      {
+        name: "wishlists",
+        module: "shopping",
+        purpose: "Represents a user wishlist.",
+        fields: [
+          { name: "wishlist_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" }
+        ],
+        relationships: [
+          "One user can have a wishlist.",
+          "One wishlist can contain many wishlist items."
+        ]
+      },
+      {
+        name: "wishlist_items",
+        module: "shopping",
+        purpose: "Stores products saved in a wishlist.",
+        fields: [
+          { name: "wishlist_item_id", meta: "PK, auto increment" },
+          { name: "wishlist_id", meta: "FK -> wishlists.wishlist_id" },
+          { name: "product_id", meta: "FK -> products.product_id" }
+        ],
+        relationships: [
+          "Many wishlist items belong to one wishlist.",
+          "Many wishlist items can point to one product."
+        ]
+      },
+      {
+        name: "shipping_methods",
+        module: "order",
+        purpose: "Lists available shipping options.",
+        fields: [
+          { name: "shipping_method_id", meta: "PK, auto increment" },
+          { name: "method_name", meta: "Shipping method name" },
+          { name: "fee", meta: "Shipping cost" }
+        ],
+        relationships: ["One shipping method can be used by many orders."]
+      },
+      {
+        name: "payment_methods",
+        module: "order",
+        purpose: "Lists available payment methods.",
+        fields: [
+          { name: "payment_method_id", meta: "PK, auto increment" },
+          { name: "method_name", meta: "Payment method name" },
+          { name: "provider", meta: "Provider name" }
+        ],
+        relationships: [
+          "One payment method can be used by many payments.",
+          "Also used in car orders."
+        ]
+      },
+      {
+        name: "orders",
+        module: "order",
+        purpose: "Stores customer orders.",
+        fields: [
+          { name: "order_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "address_id", meta: "FK -> user_addresses.address_id" },
+          { name: "shipping_method_id", meta: "FK -> shipping_methods.shipping_method_id" },
+          { name: "total_amount", meta: "Final payable amount" }
+        ],
+        relationships: [
+          "One user can place many orders.",
+          "One order can have many order items, payments, shipments, and status history."
+        ]
+      },
+      {
+        name: "order_items",
+        module: "order",
+        purpose: "Stores the products inside an order.",
+        fields: [
+          { name: "order_item_id", meta: "PK, auto increment" },
+          { name: "order_id", meta: "FK -> orders.order_id" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "variant_id", meta: "FK -> product_variants.variant_id" }
+        ],
+        relationships: [
+          "Many order items belong to one order.",
+          "Many order items can reference one product."
+        ]
+      },
+      {
+        name: "order_coupons",
+        module: "order",
+        purpose: "Bridge table between orders and coupons.",
+        fields: [
+          { name: "order_coupon_id", meta: "PK, auto increment" },
+          { name: "order_id", meta: "FK -> orders.order_id" },
+          { name: "coupon_id", meta: "FK -> coupons.coupon_id" }
+        ],
+        relationships: ["Many-to-many between orders and coupons."]
+      },
+      {
+        name: "payments",
+        module: "order",
+        purpose: "Stores payment transactions for orders.",
+        fields: [
+          { name: "payment_id", meta: "PK, auto increment" },
+          { name: "order_id", meta: "FK -> orders.order_id" },
+          { name: "payment_method_id", meta: "FK -> payment_methods.payment_method_id" },
+          { name: "payment_status", meta: "Default pending" }
+        ],
+        relationships: [
+          "Many payments belong to one order.",
+          "Many payments can use one payment method."
+        ]
+      },
+      {
+        name: "shipments",
+        module: "order",
+        purpose: "Tracks delivery and shipping status for orders.",
+        fields: [
+          { name: "shipment_id", meta: "PK, auto increment" },
+          { name: "order_id", meta: "FK -> orders.order_id" },
+          { name: "tracking_number", meta: "Courier tracking" }
+        ],
+        relationships: ["One order can have one or many shipment records, depending on business rules."]
+      },
+      {
+        name: "order_status_history",
+        module: "order",
+        purpose: "Stores every order status change over time.",
+        fields: [
+          { name: "history_id", meta: "PK, auto increment" },
+          { name: "order_id", meta: "FK -> orders.order_id" },
+          { name: "changed_by", meta: "FK -> users.user_id" },
+          { name: "status", meta: "Changed status value" }
+        ],
+        relationships: [
+          "One order can have many status history entries.",
+          "One user can create many status updates."
+        ]
+      },
+      {
+        name: "reviews",
+        module: "service",
+        purpose: "Stores customer ratings and comments for products.",
+        fields: [
+          { name: "review_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "rating", meta: "Numeric rating" }
+        ],
+        relationships: [
+          "Many reviews belong to one user.",
+          "Many reviews belong to one product."
+        ]
+      },
+      {
+        name: "returns",
+        module: "service",
+        purpose: "Stores return requests for ordered items.",
+        fields: [
+          { name: "return_id", meta: "PK, auto increment" },
+          { name: "order_item_id", meta: "FK -> order_items.order_item_id" },
+          { name: "return_status", meta: "Default requested" }
+        ],
+        relationships: ["One order item can have a return process."]
+      },
+      {
+        name: "refunds",
+        module: "service",
+        purpose: "Stores refund data for returned items.",
+        fields: [
+          { name: "refund_id", meta: "PK, auto increment" },
+          { name: "return_id", meta: "FK -> returns.return_id" },
+          { name: "amount", meta: "Refund amount" }
+        ],
+        relationships: ["This is a good one-to-one example: one return usually leads to one refund."]
+      },
+      {
+        name: "car_purchase_requests",
+        module: "carflow",
+        purpose: "Starts the special car buying flow before a final purchase is created.",
+        fields: [
+          { name: "request_id", meta: "PK, auto increment" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "product_id", meta: "FK -> products.product_id" },
+          { name: "reviewed_by", meta: "FK -> users.user_id" }
+        ],
+        relationships: [
+          "One user can create many car purchase requests.",
+          "One request is for one car product."
+        ]
+      },
+      {
+        name: "car_appointments",
+        module: "carflow",
+        purpose: "Schedules showroom or consultation appointments after a car request.",
+        fields: [
+          { name: "appointment_id", meta: "PK, auto increment" },
+          { name: "request_id", meta: "FK -> car_purchase_requests.request_id" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "confirmed_by", meta: "FK -> users.user_id" }
+        ],
+        relationships: [
+          "One request can have appointment activity.",
+          "One admin can confirm many appointments."
+        ]
+      },
+      {
+        name: "car_orders",
+        module: "carflow",
+        purpose: "Stores the final confirmed car purchase record.",
+        fields: [
+          { name: "car_order_id", meta: "PK, auto increment" },
+          { name: "request_id", meta: "FK -> car_purchase_requests.request_id" },
+          { name: "user_id", meta: "FK -> users.user_id" },
+          { name: "address_id", meta: "FK -> user_addresses.address_id" },
+          { name: "payment_method_id", meta: "FK -> payment_methods.payment_method_id" }
+        ],
+        relationships: [
+          "One request can lead to one car order.",
+          "One user can have many car orders."
+        ]
+      },
+      {
+        name: "car_order_status_history",
+        module: "carflow",
+        purpose: "Stores status changes for car orders.",
+        fields: [
+          { name: "history_id", meta: "PK, auto increment" },
+          { name: "car_order_id", meta: "FK -> car_orders.car_order_id" },
+          { name: "changed_by", meta: "FK -> users.user_id" }
+        ],
+        relationships: [
+          "One car order can have many status history records.",
+          "One admin can change many car order statuses."
+        ]
+      }
+    ];
+
+    const relationshipExamples = [
+      {
+        title: "One to One",
+        explanation: "A one-to-one relationship means one record is connected to only one record in another table.",
+        code: "returns (1) -> (1) refunds",
+        note: "In your system, a return normally leads to one refund record."
+      },
+      {
+        title: "One to Many",
+        explanation: "A one-to-many relationship means one parent record can connect to many child records.",
+        code: "users (1) -> (many) orders",
+        note: "One user can place many orders, but each order belongs to one user."
+      },
+      {
+        title: "Many to Many",
+        explanation: "A many-to-many relationship means both sides can connect to many records, usually through a bridge table.",
+        code: "products (many) <-> product_discounts <-> discounts (many)",
+        note: "One product can have many discounts, and one discount can apply to many products."
+      }
+    ];
+
+    const moduleMap = Object.fromEntries(modules.map((module) => [module.id, module]));
+    let activeModule = "all";
+    let searchTerm = "";
+
+    function createModuleFilters() {
+      const wrap = document.getElementById("moduleFilters");
+      wrap.innerHTML = "";
+
+      modules.forEach((module) => {
+        const button = document.createElement("button");
+        button.className = `chip ${module.id === activeModule ? "active" : ""}`;
+        button.textContent = module.name;
+        button.type = "button";
+        button.addEventListener("click", () => {
+          activeModule = module.id;
+          createModuleFilters();
+          renderTables();
+        });
+        wrap.appendChild(button);
+      });
+    }
+
+    function renderModuleCards() {
+      const container = document.getElementById("moduleGrid");
+      const grouped = modules.filter((module) => module.id !== "all").map((module) => ({
+        ...module,
+        count: tables.filter((table) => table.module === module.id).length
+      }));
+
+      container.innerHTML = grouped.map((module) => `
+        <article class="module-card">
+          <h3>${module.name}</h3>
+          <p>${module.description}</p>
+          <div class="table-list">
+            <span class="table-pill">${module.count} tables</span>
+          </div>
+          <button class="chip" data-module="${module.id}" type="button">Focus this module</button>
+        </article>
+      `).join("");
+
+      container.querySelectorAll("[data-module]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeModule = button.dataset.module;
+          createModuleFilters();
+          renderTables();
+          window.scrollTo({ top: document.querySelector(".table-section").offsetTop - 20, behavior: "smooth" });
+        });
+      });
+    }
+
+    function renderRelationshipCards() {
+      const container = document.getElementById("relationshipGrid");
+      container.innerHTML = relationshipExamples.map((item) => `
+        <article class="relationship-card">
+          <h3>${item.title}</h3>
+          <p>${item.explanation}</p>
+          <code>${item.code}</code>
+          <p>${item.note}</p>
+        </article>
+      `).join("");
+    }
+
+    function renderTables() {
+      const container = document.getElementById("tableCards");
+      const emptyState = document.getElementById("emptyState");
+
+      const filtered = tables.filter((table) => {
+        const matchesModule = activeModule === "all" || table.module === activeModule;
+        const haystack = [
+          table.name,
+          table.purpose,
+          moduleMap[table.module]?.name || "",
+          ...table.fields.flatMap((field) => [field.name, field.meta]),
+          ...table.relationships
+        ].join(" ").toLowerCase();
+        const matchesSearch = haystack.includes(searchTerm.toLowerCase());
+        return matchesModule && matchesSearch;
+      });
+
+      container.innerHTML = filtered.map((table) => `
+        <article class="table-card">
+          <div class="table-header">
+            <div>
+              <h3>${table.name}</h3>
+              <p>${table.purpose}</p>
+            </div>
+            <div class="tag-row">
+              <span class="tag module">${moduleMap[table.module]?.name || table.module}</span>
+              <span class="tag">${table.fields.length} main fields shown</span>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            ${table.fields.map((field) => `
+              <div class="field">
+                <strong>${field.name}</strong>
+                <small>${field.meta}</small>
+              </div>
+            `).join("")}
+          </div>
+
+          <div class="relations">
+            <h4>Key relationships</h4>
+            <ul>
+              ${table.relationships.map((item) => `<li>${item}</li>`).join("")}
+            </ul>
+          </div>
+        </article>
+      `).join("");
+
+      emptyState.style.display = filtered.length ? "none" : "block";
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (event) => {
+      searchTerm = event.target.value.trim();
+      renderTables();
+    });
+
+    createModuleFilters();
+    renderModuleCards();
+    renderRelationshipCards();
+    renderTables();
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 package com.example.neakta.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -10,36 +11,29 @@ import com.example.neakta.data.SessionManager
 import com.example.neakta.ui.auth.AuthViewModel
 import com.example.neakta.ui.auth.LoginScreen
 import com.example.neakta.ui.auth.RegisterScreen
-import com.example.neakta.ui.splash.SplashScreen
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.example.neakta.ui.detail.PinDetailScreen
 import com.example.neakta.ui.home.HomeScreen
+import com.example.neakta.ui.home.recentPins
+import com.example.neakta.ui.home.trendingPins
 import com.example.neakta.ui.onboarding.OnboardingScreen
+import com.example.neakta.ui.splash.SplashScreen
 
 @Composable
 fun NeaktaNavGraph() {
-    val context       = LocalContext.current
-    val session       = SessionManager(context)
+    val context = LocalContext.current
+    val session = SessionManager(context)
     val navController = rememberNavController()
 
-    // Shared AuthViewModel with SessionManager injected
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModel.Factory(session)
     )
 
-    // Decide where to start:
-    // - already logged in  → go straight to home (TODO)
-    // - first launch       → splash (will route to onboarding later)
-    val startDestination = "splash"
+    // Flat map of all pins — lookup by id
+    val allPins = remember { (trendingPins + recentPins).associateBy { it.id } }
 
     NavHost(
-        navController    = navController,
-        startDestination = startDestination
+        navController = navController,
+        startDestination = "splash"
     ) {
         composable("splash") {
             SplashScreen(
@@ -54,7 +48,7 @@ fun NeaktaNavGraph() {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("onboarding") {  // ← was "home"
+                    navController.navigate("onboarding") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -79,10 +73,6 @@ fun NeaktaNavGraph() {
             )
         }
 
-        composable("home") {
-            HomeScreen()
-        }
-        // Add this new composable:
         composable("onboarding") {
             OnboardingScreen(
                 onFinished = {
@@ -91,6 +81,28 @@ fun NeaktaNavGraph() {
                     }
                 }
             )
+        }
+
+        composable("home") {
+            HomeScreen(
+                onPinClick = { pin ->
+                    navController.navigate("pin_detail/${pin.id}")
+                }
+            )
+        }
+
+        // ← NEW: Pin detail screen
+        composable("pin_detail/{pinId}") { backStackEntry ->
+            val pinId = backStackEntry.arguments
+                ?.getString("pinId")
+                ?.toIntOrNull()
+            val pin = pinId?.let { allPins[it] }
+            if (pin != null) {
+                PinDetailScreen(
+                    pin = pin,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
