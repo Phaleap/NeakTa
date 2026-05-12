@@ -17,6 +17,7 @@ import com.example.neakta.ui.home.recentPins
 import com.example.neakta.ui.home.trendingPins
 import com.example.neakta.ui.onboarding.OnboardingScreen
 import com.example.neakta.ui.splash.SplashScreen
+import com.example.neakta.ui.add.AddGemScreen
 
 @Composable
 fun NeaktaNavGraph() {
@@ -85,6 +86,15 @@ fun NeaktaNavGraph() {
 
         composable("home") {
             HomeScreen(
+                onNavigateToAdd = {
+                    navController.navigate("add_gem")  // ← THIS was missing
+                },
+                onNavigateToRanks = {
+                    navController.navigate("ranks")
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile")
+                },
                 onPinClick = { pin ->
                     navController.navigate("pin_detail/${pin.id}")
                 }
@@ -104,5 +114,17 @@ fun NeaktaNavGraph() {
                 )
             }
         }
+
+        composable("add_gem") {
+            AddGemScreen(
+                onBack = { navController.popBackStack() },
+                onPublished = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }
