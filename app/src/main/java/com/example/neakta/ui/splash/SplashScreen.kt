@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -28,7 +29,7 @@ import com.example.neakta.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// ─── Font Families ────────────────────────────────────────────────────────────
+// ─── Font Families ────────────────────────────────────────────
 private val CormorantGaramond = FontFamily(
     Font(R.font.cormorant_garamond_light,    FontWeight.Light),
     Font(R.font.cormorant_garamond_regular,  FontWeight.Normal),
@@ -41,12 +42,14 @@ private val Cinzel = FontFamily(
     Font(R.font.cinzel_semibold, FontWeight.SemiBold),
 )
 
-// ─── Color Tokens ─────────────────────────────────────────────────────────────
-private val AntiqueGold    = Color(0xFFD4B870)
-private val AntiqueGoldDim = Color(0xFFD4B870).copy(alpha = 0.5f)
-private val TextPrimary    = Color(0xFFEEE6D2)
-private val TextMuted      = Color(0xFFB4A88C).copy(alpha = 0.70f)
-private val RuleColor      = Color(0xFFD4B870).copy(alpha = 0.35f)
+// ─── Color Tokens ─────────────────────────────────────────────
+private val ElectricBlue = Color(0xFF5FD3A6)
+private val Bubblegum    = Color(0xFF5FD3A6)
+private val LimePop      = Color(0xFF5FD3A6)
+private val InkText      = Color(0xFFF7FAFC)
+private val MutedText    = Color(0xFFB8C2CC)
+private val SoftOutline  = Color(0x26FFFFFF)
+private val DeepIndigo   = Color(0xFF0D1117)
 
 @Composable
 fun SplashScreen(
@@ -63,7 +66,7 @@ fun SplashScreen(
 
     // ── Swipe state ──────────────────────────────────────────
     var swipeDelta by remember { mutableStateOf(0f) }
-    val SWIPE_THRESHOLD = 80f  // ✅ Short flick — was 200f
+    val SWIPE_THRESHOLD = 80f
 
     val buttonOffsetY by animateFloatAsState(
         targetValue = swipeDelta.coerceIn(-SWIPE_THRESHOLD, 0f),
@@ -71,6 +74,7 @@ fun SplashScreen(
         label = "buttonOffset"
     )
 
+    // Pulsing chevron
     val chevronAlpha by rememberInfiniteTransition(label = "chevron")
         .animateFloat(
             initialValue = 0.3f,
@@ -82,6 +86,18 @@ fun SplashScreen(
             label = "chevronPulse"
         )
 
+    // Shifting gradient animation for the glow strip
+    val glowShift by rememberInfiniteTransition(label = "glow")
+        .animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "glowShift"
+        )
+
     LaunchedEffect(Unit) {
         delay(200)
         visible = true
@@ -89,7 +105,7 @@ fun SplashScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── Background ───────────────────────────────────────
+        // ── Background photo (kept as-is) ────────────────────
         AsyncImage(
             model = R.drawable.bayon_intro,
             contentDescription = null,
@@ -97,28 +113,54 @@ fun SplashScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // ── Dark overlay ─────────────────────────────────────
+        // ── Dark-indigo gradient overlay (replaces pure black) ──
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color(0x330C0A07),   // top — subtle
-                            Color(0x880C0A07),   // upper-mid — starts getting dark sooner
-                            Color(0xCC0C0A07),   // lower — heavy dark
-                            Color(0xFF0C0A07)    // bottom — fully solid
+                        colorStops = arrayOf(
+                            0.0f to Color(0x330D1117),
+                            0.3f to Color(0x77111827),
+                            0.6f to Color(0xBB111827),
+                            1.0f to Color(0xFF0D1117)
                         )
-
                     )
                 )
         )
 
-        // ── TOP: NEAKTA ──────────────────────────────────────
+        // ── Ambient color glows on top of photo ──────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            ElectricBlue.copy(alpha = 0.18f * glowShift + 0.08f),
+                            Bubblegum.copy(alpha = 0.15f * (1f - glowShift) + 0.06f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(LimePop.copy(alpha = 0.08f), Color.Transparent)
+                    )
+                )
+        )
+
+        // ── TOP: NEAKTA wordmark ─────────────────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 72.dp)   // ✅ Not fully top, breathing room
+                .statusBarsPadding()
+                .padding(top = 40.dp)
                 .alpha(alphaAnim),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -128,17 +170,29 @@ fun SplashScreen(
                     fontFamily = Cinzel,
                     fontSize = 42.sp,
                     letterSpacing = 10.sp,
-                    color = AntiqueGold,
+                    fontWeight = FontWeight.Bold,
+                    color = InkText,
                     textAlign = TextAlign.Center
                 )
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            // Animated color underline strip
+            Box(
+                modifier = Modifier
+                    .width(180.dp)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        Brush.horizontalGradient(listOf(LimePop, LimePop.copy(alpha = 0.35f)))
+                    )
+            )
         }
 
-        // ── CENTER: taglines ─────────────────────────────────────────────────────────
+        // ── CENTER: taglines + angkor image ──────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-80).dp)          // ✅ nudge up ~60dp
+                .offset(y = (-70).dp)
                 .padding(horizontal = 32.dp)
                 .alpha(alphaAnim),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -153,48 +207,40 @@ fun SplashScreen(
                 contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "CAMBODIA · HIDDEN GEMS",
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 13.sp,
-                    letterSpacing = 4.sp,
-                    color = TextPrimary.copy(alpha = 0.75f),
-                    textAlign = TextAlign.Center
-                )
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Box(
-                modifier = Modifier
-                    .width(50.dp)
-                    .height(1.dp)
-                    .background(RuleColor)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Text(
                 text = "Find. Share. Preserve.",
                 style = TextStyle(
-                    fontFamily = CormorantGaramond,
-                    fontSize = 17.sp,
-                    fontStyle = FontStyle.Italic,
-                    color = TextMuted,
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MutedText,
                     letterSpacing = 1.sp,
+                    textAlign = TextAlign.Center
+                )
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Cambodia, remixed for discovery",
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MutedText.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center
                 )
             )
         }
 
-        // ── BOTTOM: Swipe-Up Explore Button ──────────────────
+        // ── BOTTOM: Swipe-Up button ───────────────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 52.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 48.dp)
                 .offset(y = buttonOffsetY.dp)
                 .alpha(alphaAnim)
                 .pointerInput(Unit) {
@@ -218,36 +264,42 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Pulsing chevrons
+            // Pulsing chevrons — electric blue
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy((-6).dp)
             ) {
-                Text("⌃", style = TextStyle(color = AntiqueGold.copy(alpha = chevronAlpha * 0.4f), fontSize = 18.sp))
-                Text("⌃", style = TextStyle(color = AntiqueGold.copy(alpha = chevronAlpha * 0.7f), fontSize = 18.sp))
-                Text("⌃", style = TextStyle(color = AntiqueGold.copy(alpha = chevronAlpha),        fontSize = 18.sp))
+                Text("⌃", style = TextStyle(color = ElectricBlue.copy(alpha = chevronAlpha * 0.3f), fontSize = 18.sp))
+                Text("⌃", style = TextStyle(color = ElectricBlue.copy(alpha = chevronAlpha * 0.6f), fontSize = 18.sp))
+                Text("⌃", style = TextStyle(color = ElectricBlue.copy(alpha = chevronAlpha),        fontSize = 18.sp))
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Pill button
+            // EXPLORE pill — gradient border, glass fill
             Box(
                 modifier = Modifier
-                    .width(130.dp)
+                    .width(140.dp)
                     .height(56.dp)
+                    .clip(RoundedCornerShape(999.dp))
                     .background(
-                        brush = Brush.verticalGradient(
+                        Brush.horizontalGradient(
                             listOf(
-                                AntiqueGold.copy(alpha = 0.15f),
-                                AntiqueGold.copy(alpha = 0.05f)
+                                ElectricBlue.copy(alpha = 0.18f),
+                                Bubblegum.copy(alpha = 0.12f)
                             )
-                        ),
-                        shape = RoundedCornerShape(50)
+                        )
                     )
                     .border(
                         width = 1.dp,
-                        color = AntiqueGold.copy(alpha = 0.6f),
-                        shape = RoundedCornerShape(50)
+                        brush = Brush.horizontalGradient(
+                            listOf(
+                                ElectricBlue.copy(alpha = 0.8f),
+                                Bubblegum.copy(alpha = 0.6f),
+                                LimePop.copy(alpha = 0.5f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(999.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -257,22 +309,49 @@ fun SplashScreen(
                         fontFamily = Cinzel,
                         fontSize = 12.sp,
                         letterSpacing = 3.sp,
-                        color = AntiqueGold
+                        fontWeight = FontWeight.Bold,
+                        color = InkText
                     )
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "swipe up",
                 style = TextStyle(
-                    fontFamily = CormorantGaramond,
-                    fontSize = 11.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 12.sp,
                     letterSpacing = 2.sp,
-                    color = AntiqueGoldDim
+                    color = MutedText.copy(alpha = 0.5f)
                 )
             )
         }
+    }
+}
+
+// ─── Pill chip ────────────────────────────────────────────────
+@Composable
+private fun SplashPill(text: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color(0x991A202C))
+            .border(
+                width = 1.dp,
+                color = color.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(999.dp)
+            )
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            text = text,
+            style = TextStyle(
+                fontSize = 9.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.sp,
+                color = color
+            )
+        )
     }
 }

@@ -65,14 +65,14 @@ data class OnboardingPage(
     val accent: Color
 )
 
-private val InkText = Color(0xFFF8F7FF)
-private val MutedText = Color(0xFFD0CAE8)
-private val ElectricBlue = Color(0xFF76D6FF)
-private val Bubblegum = Color(0xFFFF8BC8)
-private val LimePop = Color(0xFFD8FF73)
-private val DeepIndigo = Color(0xFF0D1020)
-private val SoftOutline = Color(0x33FFFFFF)
-private val GlassPanel = Color(0xD5191731)
+private val InkText = Color(0xFFF7FAFC)
+private val MutedText = Color(0xFFB8C2CC)
+private val ElectricBlue = Color(0xFF5FD3A6)
+private val Bubblegum = Color(0xFF5FD3A6)
+private val LimePop = Color(0xFF5FD3A6)
+private val DeepIndigo = Color(0xFF0D1117)
+private val SoftOutline = Color(0x26FFFFFF)
+private val GlassPanel = Color(0x991A202C)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -115,9 +115,9 @@ fun OnboardingScreen(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF0A1020),
-                        Color(0xFF15112E),
-                        Color(0xFF25113C),
+                        Color(0xFF0D1117),
+                        Color(0xFF111827),
+                        Color(0xFF0D1117),
                         DeepIndigo
                     )
                 )
@@ -130,8 +130,8 @@ fun OnboardingScreen(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            ElectricBlue.copy(alpha = 0.24f),
-                            Bubblegum.copy(alpha = 0.22f),
+                            LimePop.copy(alpha = 0.16f),
+                            LimePop.copy(alpha = 0.05f),
                             Color.Transparent
                         )
                     )
@@ -162,7 +162,7 @@ fun OnboardingScreen(
                     Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            Color(0xC2171630),
+                            Color(0xCC111827),
                             DeepIndigo
                         )
                     )
@@ -271,9 +271,9 @@ private fun OnboardingPageContent(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color(0x6610172D),
-                            Color(0x77331755),
-                            Color(0xF00C0D16)
+                            Color(0x66111827),
+                            Color(0x77111827),
+                            Color(0xF00D1117)
                         )
                     )
                 )
@@ -382,7 +382,7 @@ private fun StatStrip(page: OnboardingPage) {
                 Icon(
                     imageVector = Icons.Default.TravelExplore,
                     contentDescription = null,
-                    tint = Color(0xFF17122A),
+                    tint = Color(0xFF0D1117),
                     modifier = Modifier
                         .padding(9.dp)
                         .size(18.dp)
@@ -461,9 +461,10 @@ private fun OnboardingActionButton(
             .height(56.dp),
         shape = RoundedCornerShape(18.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = accent,
-            contentColor = Color(0xFF17122A)
+            containerColor = GlassPanel,
+            contentColor = accent
         ),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.70f)),
         elevation = null
     ) {
         AnimatedContent(
@@ -480,7 +481,7 @@ private fun OnboardingActionButton(
                 Icon(
                     imageVector = if (last) Icons.Default.LocationOn else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = Color(0xFF17122A),
+                    tint = accent,
                     modifier = Modifier.size(19.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -490,7 +491,7 @@ private fun OnboardingActionButton(
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF17122A)
+                        color = accent
                     )
                 )
             }

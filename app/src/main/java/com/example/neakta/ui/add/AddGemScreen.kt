@@ -47,13 +47,13 @@ import com.example.neakta.ui.home.LimePop
 import com.example.neakta.ui.home.SoftOutline
 
 // ─── Colors local to this screen ─────────────────────────────
-private val InkText = Color(0xFFF8F7FF)
-private val MutedText = Color(0xFFD0CAE8)
-private val NightBase = Color(0xFF0A1020)
-private val CardBg = Color(0xFF18152F)
-private val FieldBg = Color(0x0AFFFFFF)
-private val FieldBorder = Color(0x33FFFFFF)
-private val FieldFocused = Color(0xFF76D6FF)
+private val InkText = Color(0xFFF7FAFC)
+private val MutedText = Color(0xFFB8C2CC)
+private val NightBase = Color(0xFF0D1117)
+private val CardBg = Color(0xE61A202C)
+private val FieldBg = Color(0x991A202C)
+private val FieldBorder = Color(0x26FFFFFF)
+private val FieldFocused = Color(0xFF5FD3A6)
 
 // ─── Cambodian Provinces ─────────────────────────────────────
 val cambodianProvinces = listOf(

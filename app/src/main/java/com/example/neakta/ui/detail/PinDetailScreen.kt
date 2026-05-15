@@ -67,16 +67,16 @@ import coil.compose.AsyncImage
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.home.PinCard
 
-private val InkText = Color(0xFFF8F7FF)
-private val MutedText = Color(0xFFD0CAE8)
-private val ElectricBlue = Color(0xFF76D6FF)
-private val Bubblegum = Color(0xFFFF8BC8)
-private val LimePop = Color(0xFFD8FF73)
-private val DeepIndigo = Color(0xFF0D1020)
-private val CardStart = Color(0xFF18152F)
-private val CardEnd = Color(0xFF261D46)
-private val SoftOutline = Color(0x33FFFFFF)
-private val GlassPanel = Color(0xD5191731)
+private val InkText = Color(0xFFF7FAFC)
+private val MutedText = Color(0xFFB8C2CC)
+private val ElectricBlue = Color(0xFF5FD3A6)
+private val Bubblegum = Color(0xFF5FD3A6)
+private val LimePop = Color(0xFF5FD3A6)
+private val DeepIndigo = Color(0xFF0D1117)
+private val CardStart = Color(0xE61A202C)
+private val CardEnd = Color(0xCC111827)
+private val SoftOutline = Color(0x26FFFFFF)
+private val GlassPanel = Color(0x991A202C)
 
 @Composable
 fun PinDetailScreen(
@@ -96,9 +96,9 @@ fun PinDetailScreen(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF0A1020),
-                        Color(0xFF15112E),
-                        Color(0xFF25113C),
+                        Color(0xFF0D1117),
+                        Color(0xFF111827),
+                        Color(0xFF0D1117),
                         DeepIndigo
                     )
                 )
@@ -111,8 +111,8 @@ fun PinDetailScreen(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            ElectricBlue.copy(alpha = 0.24f),
-                            Bubblegum.copy(alpha = 0.22f),
+                            LimePop.copy(alpha = 0.16f),
+                            LimePop.copy(alpha = 0.05f),
                             Color.Transparent
                         )
                     )
@@ -247,9 +247,9 @@ private fun HeroSection(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color(0x7710172D),
-                            Color(0x22331755),
-                            Color(0xEE0C0D16)
+                            Color(0x77111827),
+                            Color(0x22111827),
+                            Color(0xEE0D1117)
                         )
                     )
                 )
@@ -550,9 +550,9 @@ private fun LocationPanel(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            Color(0xFF10223F),
-                            Color(0xFF263059),
-                            Color(0xFF1A1533)
+                            Color(0xFF111827),
+                            Color(0xFF1A202C),
+                            Color(0xFF0D1117)
                         )
                     )
                 )
@@ -639,8 +639,8 @@ private fun DetailActionButton(
         onClick = onClick,
         modifier = modifier.height(46.dp),
         shape = RoundedCornerShape(16.dp),
-        color = if (filled) accent else Color.Transparent,
-        border = if (filled) null else BorderStroke(1.dp, accent.copy(alpha = 0.55f))
+        color = GlassPanel,
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp),
@@ -650,7 +650,7 @@ private fun DetailActionButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (filled) Color(0xFF17122A) else accent,
+                tint = accent,
                 modifier = Modifier.size(17.dp)
             )
             Spacer(modifier = Modifier.width(7.dp))
@@ -660,7 +660,7 @@ private fun DetailActionButton(
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (filled) Color(0xFF17122A) else accent
+                    color = accent
                 )
             )
         }
@@ -708,7 +708,7 @@ private fun BottomFoundBar(
                     Brush.verticalGradient(
                         listOf(
                             Color.Transparent,
-                            Color(0xEE0D1020),
+                            Color(0xEE0D1117),
                             DeepIndigo
                         )
                     )
@@ -724,15 +724,16 @@ private fun BottomFoundBar(
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (foundPressed) ElectricBlue else LimePop,
-                    contentColor = Color(0xFF17122A)
+                    containerColor = GlassPanel,
+                    contentColor = LimePop
                 ),
+                border = BorderStroke(1.dp, LimePop.copy(alpha = 0.70f)),
                 elevation = null
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
                     contentDescription = null,
-                    tint = Color(0xFF17122A),
+                    tint = LimePop,
                     modifier = Modifier.size(19.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -742,7 +743,7 @@ private fun BottomFoundBar(
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF17122A)
+                        color = LimePop
                     )
                 )
             }

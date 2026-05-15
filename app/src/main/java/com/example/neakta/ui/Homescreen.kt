@@ -179,15 +179,16 @@ val recentPins = listOf(
 val provinceSpotlight = Triple("Battambang", 247, "The Bamboo Province")
 
 // ─── Colors ──────────────────────────────────────────────────
-private val InkText = Color(0xFFF8F7FF)
-private val MutedText = Color(0xFFD0CAE8)
-val ElectricBlue = Color(0xFF76D6FF)
-val Bubblegum = Color(0xFFFF8BC8)
-val LimePop = Color(0xFFD8FF73)
-private val DeepIndigo = Color(0xFF0D1020)
-private val CardStart = Color(0xFF18152F)
-private val CardEnd = Color(0xFF261D46)
-val SoftOutline = Color(0x33FFFFFF)
+private val InkText = Color(0xFFF7FAFC)
+private val MutedText = Color(0xFFB8C2CC)
+val ElectricBlue = Color(0xFF5FD3A6)
+val Bubblegum = Color(0xFF5FD3A6)
+val LimePop = Color(0xFF5FD3A6)
+private val DeepIndigo = Color(0xFF0D1117)
+private val CardStart = Color(0xE61A202C)
+private val CardEnd = Color(0xCC111827)
+val SoftOutline = Color(0x26FFFFFF)
+private val GlassPanel = Color(0x991A202C)
 
 // ─── HomeScreen ──────────────────────────────────────────────
 @Composable
@@ -219,9 +220,9 @@ fun HomeScreen(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF0A1020),
-                        Color(0xFF15112E),
-                        Color(0xFF25113C),
+                        Color(0xFF0D1117),
+                        Color(0xFF111827),
+                        Color(0xFF0D1117),
                         DeepIndigo
                     )
                 )
@@ -234,8 +235,8 @@ fun HomeScreen(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            ElectricBlue.copy(alpha = 0.28f),
-                            Bubblegum.copy(alpha = 0.25f),
+                            LimePop.copy(alpha = 0.18f),
+                            LimePop.copy(alpha = 0.06f),
                             Color.Transparent
                         )
                     )
@@ -248,7 +249,7 @@ fun HomeScreen(
                 .height(240.dp)
                 .background(
                     Brush.radialGradient(
-                        colors = listOf(LimePop.copy(alpha = 0.15f), Color.Transparent)
+                        colors = listOf(LimePop.copy(alpha = 0.10f), Color.Transparent)
                     )
                 )
         )
@@ -358,12 +359,7 @@ private fun CategoryFilterRow(
                     .clip(RoundedCornerShape(999.dp))
                     .background(
                         if (isSelected)
-                            Brush.horizontalGradient(
-                                listOf(
-                                    ElectricBlue.copy(alpha = 0.8f),
-                                    Bubblegum.copy(alpha = 0.7f)
-                                )
-                            )
+                            Brush.horizontalGradient(listOf(GlassPanel, GlassPanel))
                         else
                             Brush.horizontalGradient(
                                 listOf(Color(0xFF191731), Color(0xFF191731))
@@ -371,7 +367,7 @@ private fun CategoryFilterRow(
                     )
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) Color.Transparent else SoftOutline,
+                        color = if (isSelected) LimePop.copy(alpha = 0.70f) else SoftOutline,
                         shape = RoundedCornerShape(999.dp)
                     )
                     .clickable { onCategorySelected(category) }
@@ -384,7 +380,7 @@ private fun CategoryFilterRow(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 0.5.sp,
-                        color = if (isSelected) Color(0xFF17122A) else MutedText
+                        color = if (isSelected) LimePop else MutedText
                     )
                 )
             }
@@ -457,7 +453,7 @@ private fun HomeTopBar(onNavigateToProfile: () -> Unit) {
 
         Surface(
             shape = CircleShape,
-            color = Color(0xB2201C3B),
+            color = GlassPanel,
             border = androidx.compose.foundation.BorderStroke(1.dp, SoftOutline)
         ) {
             IconButton(
@@ -490,15 +486,15 @@ private fun HeroSpotlightCard(
             .clip(RoundedCornerShape(28.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF1B1A3D), Color(0xFF3A235E), Color(0xFF171A36))
+                    listOf(CardStart, CardEnd)
                 )
             )
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     listOf(
-                        ElectricBlue.copy(alpha = 0.55f),
-                        Bubblegum.copy(alpha = 0.48f),
+                        LimePop.copy(alpha = 0.55f),
+                        LimePop.copy(alpha = 0.16f),
                         Color.Transparent
                     )
                 ),
@@ -540,7 +536,7 @@ private fun HeroSpotlightCard(
 
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = Color.White.copy(alpha = 0.08f),
+                    color = GlassPanel,
                     border = androidx.compose.foundation.BorderStroke(1.dp, SoftOutline)
                 ) {
                     Column(
@@ -572,7 +568,8 @@ private fun HeroSpotlightCard(
             Surface(
                 onClick = onExploreClick,
                 shape = RoundedCornerShape(18.dp),
-                color = LimePop,
+                color = GlassPanel,
+                border = androidx.compose.foundation.BorderStroke(1.dp, LimePop.copy(alpha = 0.65f)),
                 modifier = Modifier.width(156.dp)
             ) {
                 Row(
@@ -583,7 +580,7 @@ private fun HeroSpotlightCard(
                     Icon(
                         imageVector = Icons.Default.TravelExplore,
                         contentDescription = null,
-                        tint = Color(0xFF17122A),
+                        tint = LimePop,
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
@@ -592,7 +589,7 @@ private fun HeroSpotlightCard(
                             fontFamily = FontFamily.SansSerif,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF17122A)
+                            color = LimePop
                         )
                     )
                 }
@@ -682,9 +679,9 @@ private fun TrendingCard(pin: PinCard, rank: Int, onClick: () -> Unit) {
                     Brush.verticalGradient(
                         listOf(
                             Color.Transparent,
-                            Color(0x55401958),
-                            Color(0xC2171630),
-                            Color(0xF00C0D16)
+                            Color(0x55111827),
+                            Color(0xCC0D1117),
+                            Color(0xF00D1117)
                         )
                     )
                 )
@@ -915,7 +912,7 @@ private fun EditorialStoryCard(pin: PinCard, onPinClick: (PinCard) -> Unit) {
 private fun CapsuleLabel(text: String) {
     Box(
         modifier = Modifier
-            .background(Color(0xD5191731), RoundedCornerShape(999.dp))
+            .background(GlassPanel, RoundedCornerShape(999.dp))
             .border(1.dp, SoftOutline, RoundedCornerShape(999.dp))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
@@ -948,16 +945,15 @@ private fun FloatingBottomNav(
             .clip(RoundedCornerShape(30.dp))
             .background(
                 Brush.horizontalGradient(
-                    listOf(Color(0xF0141730), Color(0xF0221940), Color(0xF0152035))
+                    listOf(GlassPanel, GlassPanel)
                 )
             )
             .border(
                 width = 1.dp,
                 brush = Brush.horizontalGradient(
                     listOf(
-                        ElectricBlue.copy(alpha = 0.35f),
-                        Bubblegum.copy(alpha = 0.5f),
-                        LimePop.copy(alpha = 0.25f)
+                        LimePop.copy(alpha = 0.65f),
+                        LimePop.copy(alpha = 0.18f)
                     )
                 ),
                 shape = RoundedCornerShape(30.dp)
@@ -976,7 +972,8 @@ private fun FloatingBottomNav(
         Surface(
             onClick = onNavigateToAdd,
             shape = CircleShape,
-            color = LimePop,
+            color = GlassPanel,
+            border = androidx.compose.foundation.BorderStroke(1.dp, LimePop.copy(alpha = 0.70f)),
             modifier = Modifier.size(58.dp),
             shadowElevation = 8.dp
         ) {
@@ -984,7 +981,7 @@ private fun FloatingBottomNav(
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add Gem",
-                    tint = Color(0xFF17122A),
+                    tint = LimePop,
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -1027,7 +1024,7 @@ private fun BottomNavItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (selected) InkText else MutedText.copy(alpha = 0.65f),
+            tint = if (selected) LimePop else MutedText.copy(alpha = 0.65f),
             modifier = Modifier.size(20.dp)
         )
         Text(
@@ -1037,7 +1034,7 @@ private fun BottomNavItem(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.3.sp,
-                color = if (selected) InkText else MutedText.copy(alpha = 0.65f)
+                color = if (selected) LimePop else MutedText.copy(alpha = 0.65f)
             )
         )
     }
