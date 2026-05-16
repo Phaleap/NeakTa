@@ -15,6 +15,7 @@ import com.example.neakta.ui.detail.PinDetailScreen
 import com.example.neakta.ui.home.HomeScreen
 import com.example.neakta.ui.home.recentPins
 import com.example.neakta.ui.home.trendingPins
+import com.example.neakta.ui.map.MapScreen
 import com.example.neakta.ui.onboarding.OnboardingScreen
 import com.example.neakta.ui.splash.SplashScreen
 import com.example.neakta.ui.add.AddGemScreen
@@ -86,6 +87,9 @@ fun NeaktaNavGraph() {
 
         composable("home") {
             HomeScreen(
+                onNavigateToMap = {
+                    navController.navigate("map")
+                },
                 onNavigateToAdd = {
                     navController.navigate("add_gem")  // ← THIS was missing
                 },
@@ -102,6 +106,28 @@ fun NeaktaNavGraph() {
         }
 
         // ← NEW: Pin detail screen
+        composable("map") {
+            MapScreen(
+                onPinClick = { pin ->
+                    navController.navigate("pin_detail/${pin.id}")
+                },
+                onNavigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onNavigateAdd = {
+                    navController.navigate("add_gem")
+                },
+                onNavigateRanks = {
+                    navController.navigate("ranks")
+                },
+                onNavigateProfile = {
+                    navController.navigate("profile")
+                }
+            )
+        }
+
         composable("pin_detail/{pinId}") { backStackEntry ->
             val pinId = backStackEntry.arguments
                 ?.getString("pinId")

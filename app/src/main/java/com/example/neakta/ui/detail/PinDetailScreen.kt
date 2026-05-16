@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +29,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Flag
@@ -47,6 +51,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.home.PinCard
+import kotlinx.coroutines.launch
 
 private val InkText = Color(0xFFF7FAFC)
 private val MutedText = Color(0xFFB8C2CC)
@@ -229,17 +235,26 @@ private fun HeroSection(
     pin: PinCard,
     onBack: () -> Unit
 ) {
+    val mediaUrls = pin.mediaUrls.ifEmpty { listOf(pin.imageUrl) }
+    val pagerState = rememberPagerState(pageCount = { mediaUrls.size })
+    val coroutineScope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(390.dp)
     ) {
-        AsyncImage(
-            model = pin.imageUrl,
-            contentDescription = pin.title,
-            contentScale = ContentScale.Crop,
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier.fillMaxSize()
-        )
+        ) { page ->
+            AsyncImage(
+                model = mediaUrls[page],
+                contentDescription = "${pin.title} photo ${page + 1}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         Box(
             modifier = Modifier
@@ -306,6 +321,91 @@ private fun HeroSection(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        if (mediaUrls.size > 1) {
+            GalleryNavigation(
+                currentPage = pagerState.currentPage,
+                pageCount = mediaUrls.size,
+                onPrevious = {
+                    val previousPage = (pagerState.currentPage - 1).coerceAtLeast(0)
+                    coroutineScope.launch { pagerState.animateScrollToPage(previousPage) }
+                },
+                onNext = {
+                    val nextPage = (pagerState.currentPage + 1).coerceAtMost(mediaUrls.lastIndex)
+                    coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
+                },
+                modifier = Modifier.align(Alignment.Center)
+            )
+
+            MediaCounter(
+                currentPage = pagerState.currentPage,
+                pageCount = mediaUrls.size,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 30.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryNavigation(
+    currentPage: Int,
+    pageCount: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        GlassIconButton(
+            icon = Icons.Default.ChevronLeft,
+            contentDescription = "Previous photo",
+            onClick = onPrevious,
+            enabled = currentPage > 0
+        )
+
+        GlassIconButton(
+            icon = Icons.Default.ChevronRight,
+            contentDescription = "Next photo",
+            onClick = onNext,
+            enabled = currentPage < pageCount - 1
+        )
+    }
+}
+
+@Composable
+private fun MediaCounter(
+    currentPage: Int,
+    pageCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(999.dp),
+        color = GlassPanel,
+        border = BorderStroke(1.dp, LimePop.copy(alpha = 0.55f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${currentPage + 1} / $pageCount",
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = LimePop
+                )
+            )
+        }
     }
 }
 
@@ -313,21 +413,23 @@ private fun HeroSection(
 private fun GlassIconButton(
     icon: ImageVector,
     contentDescription: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Surface(
         shape = CircleShape,
-        color = GlassPanel,
-        border = BorderStroke(1.dp, SoftOutline)
+        color = if (enabled) GlassPanel else GlassPanel.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, if (enabled) SoftOutline else SoftOutline.copy(alpha = 0.45f))
     ) {
         IconButton(
             onClick = onClick,
+            enabled = enabled,
             modifier = Modifier.size(44.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                tint = InkText,
+                tint = if (enabled) InkText else MutedText.copy(alpha = 0.42f),
                 modifier = Modifier.size(20.dp)
             )
         }

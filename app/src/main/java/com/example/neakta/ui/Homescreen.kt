@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.HorizontalDivider
@@ -70,6 +71,7 @@ data class PinCard(
     val votes: Int,
     val story: String,
     val imageUrl: String,
+    val mediaUrls: List<String> = listOf(imageUrl),
     val author: String,
     val timeAgo: String,
     val lat: Double = 11.5564,
@@ -193,6 +195,7 @@ private val GlassPanel = Color(0x991A202C)
 // ─── HomeScreen ──────────────────────────────────────────────
 @Composable
 fun HomeScreen(
+    onNavigateToMap: () -> Unit = {},
     onNavigateToAdd: () -> Unit = {},
     onNavigateToRanks: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
@@ -329,6 +332,7 @@ fun HomeScreen(
             FloatingBottomNav(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
+                onNavigateToMap = onNavigateToMap,
                 onNavigateToAdd = onNavigateToAdd,
                 onNavigateToRanks = onNavigateToRanks,
                 onNavigateToProfile = onNavigateToProfile
@@ -934,6 +938,7 @@ private fun CapsuleLabel(text: String) {
 private fun FloatingBottomNav(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
+    onNavigateToMap: () -> Unit,
     onNavigateToAdd: () -> Unit,
     onNavigateToRanks: () -> Unit,
     onNavigateToProfile: () -> Unit
@@ -969,6 +974,12 @@ private fun FloatingBottomNav(
             selected = selectedTab == 0
         ) { onTabSelected(0) }
 
+        BottomNavItem(
+            icon = Icons.Default.Map,
+            label = "Map",
+            selected = selectedTab == 1
+        ) { onTabSelected(1); onNavigateToMap() }
+
         Surface(
             onClick = onNavigateToAdd,
             shape = CircleShape,
@@ -990,14 +1001,14 @@ private fun FloatingBottomNav(
         BottomNavItem(
             icon = Icons.Default.Leaderboard,
             label = "Ranks",
-            selected = selectedTab == 2
-        ) { onTabSelected(2); onNavigateToRanks() }
+            selected = selectedTab == 3
+        ) { onTabSelected(3); onNavigateToRanks() }
 
         BottomNavItem(
             icon = Icons.Default.Person,
             label = "Profile",
-            selected = selectedTab == 3
-        ) { onTabSelected(3); onNavigateToProfile() }
+            selected = selectedTab == 4
+        ) { onTabSelected(4); onNavigateToProfile() }
     }
 }
 
