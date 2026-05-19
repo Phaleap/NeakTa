@@ -19,6 +19,7 @@ import com.example.neakta.ui.map.MapScreen
 import com.example.neakta.ui.onboarding.OnboardingScreen
 import com.example.neakta.ui.splash.SplashScreen
 import com.example.neakta.ui.add.AddGemScreen
+import com.example.neakta.ui.ranks.RanksScreen   // ← NEW
 
 @Composable
 fun NeaktaNavGraph() {
@@ -30,7 +31,6 @@ fun NeaktaNavGraph() {
         factory = AuthViewModel.Factory(session)
     )
 
-    // Flat map of all pins — lookup by id
     val allPins = remember { (trendingPins + recentPins).associateBy { it.id } }
 
     NavHost(
@@ -87,44 +87,40 @@ fun NeaktaNavGraph() {
 
         composable("home") {
             HomeScreen(
-                onNavigateToMap = {
-                    navController.navigate("map")
-                },
-                onNavigateToAdd = {
-                    navController.navigate("add_gem")  // ← THIS was missing
-                },
-                onNavigateToRanks = {
-                    navController.navigate("ranks")
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile")
-                },
-                onPinClick = { pin ->
-                    navController.navigate("pin_detail/${pin.id}")
-                }
+                onNavigateToMap = { navController.navigate("map") },
+                onNavigateToAdd = { navController.navigate("add_gem") },
+                onNavigateToRanks = { navController.navigate("ranks") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") }
             )
         }
 
-        // ← NEW: Pin detail screen
         composable("map") {
             MapScreen(
-                onPinClick = { pin ->
-                    navController.navigate("pin_detail/${pin.id}")
-                },
+                onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") },
                 onNavigateHome = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = true }
                     }
                 },
-                onNavigateAdd = {
-                    navController.navigate("add_gem")
+                onNavigateAdd = { navController.navigate("add_gem") },
+                onNavigateRanks = { navController.navigate("ranks") },
+                onNavigateProfile = { navController.navigate("profile") }
+            )
+        }
+
+        // ── NEW: Ranks screen ────────────────────────────────
+        composable("ranks") {
+            RanksScreen(
+                onNavigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 },
-                onNavigateRanks = {
-                    navController.navigate("ranks")
-                },
-                onNavigateProfile = {
-                    navController.navigate("profile")
-                }
+                onNavigateToMap = { navController.navigate("map") },
+                onNavigateToAdd = { navController.navigate("add_gem") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") }
             )
         }
 
@@ -151,6 +147,5 @@ fun NeaktaNavGraph() {
                 }
             )
         }
-
     }
 }
