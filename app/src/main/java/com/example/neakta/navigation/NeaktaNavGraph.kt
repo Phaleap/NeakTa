@@ -17,6 +17,8 @@ import com.example.neakta.ui.home.recentPins
 import com.example.neakta.ui.home.trendingPins
 import com.example.neakta.ui.map.MapScreen
 import com.example.neakta.ui.onboarding.OnboardingScreen
+import com.example.neakta.ui.profile.ProfileScreen
+import com.example.neakta.ui.settings.SettingsScreen
 import com.example.neakta.ui.splash.SplashScreen
 import com.example.neakta.ui.add.AddGemScreen
 import com.example.neakta.ui.ranks.RanksScreen   // ← NEW
@@ -121,6 +123,26 @@ fun NeaktaNavGraph() {
                 onNavigateToAdd = { navController.navigate("add_gem") },
                 onNavigateToProfile = { navController.navigate("profile") },
                 onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") }
+            )
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                onNavigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onNavigateToMap = { navController.navigate("map") },
+                onNavigateToAdd = { navController.navigate("add_gem") },
+                onNavigateToRanks = { navController.navigate("ranks") },
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
