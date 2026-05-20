@@ -2,7 +2,6 @@ package com.example.neakta.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -25,16 +23,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -45,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -184,13 +175,6 @@ fun ProfileScreen(
                     )
                 }
             }
-
-            ProfileBottomNav(
-                onNavigateHome = onNavigateHome,
-                onNavigateToMap = onNavigateToMap,
-                onNavigateToAdd = onNavigateToAdd,
-                onNavigateToRanks = onNavigateToRanks
-            )
         }
     }
 }
@@ -493,93 +477,5 @@ private fun GemRow(gem: ProfileGem) {
                 )
             )
         }
-    }
-}
-
-@Composable
-private fun ProfileBottomNav(
-    onNavigateHome: () -> Unit,
-    onNavigateToMap: () -> Unit,
-    onNavigateToAdd: () -> Unit,
-    onNavigateToRanks: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .background(GlassPanel)
-            .border(
-                width = 1.dp,
-                brush = Brush.horizontalGradient(
-                    listOf(Primary.copy(alpha = 0.65f), Primary.copy(alpha = 0.18f))
-                ),
-                shape = RoundedCornerShape(30.dp)
-            )
-            .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        BottomNavItem(Icons.Default.Home, "Home", false, onNavigateHome)
-        BottomNavItem(Icons.Default.Map, "Map", false, onNavigateToMap)
-
-        Surface(
-            onClick = onNavigateToAdd,
-            shape = CircleShape,
-            color = GlassPanel,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.70f)),
-            modifier = Modifier.size(58.dp),
-            shadowElevation = 8.dp
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Primary,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        BottomNavItem(Icons.Default.Leaderboard, "Ranks", false, onNavigateToRanks)
-        BottomNavItem(Icons.Default.Person, "Profile", true) {}
-    }
-}
-
-@Composable
-private fun BottomNavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent,
-                RoundedCornerShape(18.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (selected) Accent else MutedText.copy(alpha = 0.65f),
-            modifier = Modifier.size(20.dp)
-        )
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = if (selected) Accent else MutedText.copy(alpha = 0.65f)
-            )
-        )
     }
 }

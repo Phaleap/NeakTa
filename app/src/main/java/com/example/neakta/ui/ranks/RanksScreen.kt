@@ -277,16 +277,6 @@ fun RanksScreen(
                     )
                 }
             }
-
-            // ── Bottom Nav ────────────────────────────────────
-            RanksBottomNav(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                onNavigateHome = onNavigateHome,
-                onNavigateToMap = onNavigateToMap,
-                onNavigateToAdd = onNavigateToAdd,
-                onNavigateToProfile = onNavigateToProfile
-            )
         }
     }
 }
@@ -570,105 +560,5 @@ private fun RankListRow(pin: PinCard, rank: Int, onClick: () -> Unit) {
                 )
             )
         }
-    }
-}
-
-// ─── Bottom Nav (Ranks tab active) ───────────────────────────
-@Composable
-private fun RanksBottomNav(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    onNavigateHome: () -> Unit,
-    onNavigateToMap: () -> Unit,
-    onNavigateToAdd: () -> Unit,
-    onNavigateToProfile: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .background(GlassPanel, RoundedCornerShape(30.dp))
-            .border(
-                width = 1.dp,
-                brush = Brush.horizontalGradient(
-                    listOf(LimePop.copy(alpha = 0.65f), LimePop.copy(alpha = 0.18f))
-                ),
-                shape = RoundedCornerShape(30.dp)
-            )
-            .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NavItem(Icons.Default.Home, "Home", selectedTab == 0) {
-            onTabSelected(0); onNavigateHome()
-        }
-        NavItem(Icons.Default.Map, "Map", selectedTab == 1) {
-            onTabSelected(1); onNavigateToMap()
-        }
-
-        Surface(
-            onClick = onNavigateToAdd,
-            shape = CircleShape,
-            color = GlassPanel,
-            border = androidx.compose.foundation.BorderStroke(1.dp, LimePop.copy(alpha = 0.70f)),
-            modifier = Modifier.size(58.dp),
-            shadowElevation = 8.dp
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Gem",
-                    tint = LimePop,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        NavItem(Icons.Default.Leaderboard, "Ranks", selectedTab == 3) {
-            onTabSelected(3)
-        }
-        NavItem(Icons.Default.Person, "Profile", selectedTab == 4) {
-            onTabSelected(4); onNavigateToProfile()
-        }
-    }
-}
-
-@Composable
-private fun NavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent,
-                RoundedCornerShape(18.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (selected) LimePop else MutedText.copy(alpha = 0.65f),
-            modifier = Modifier.size(20.dp)
-        )
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 0.3.sp,
-                color = if (selected) LimePop else MutedText.copy(alpha = 0.65f)
-            )
-        )
     }
 }

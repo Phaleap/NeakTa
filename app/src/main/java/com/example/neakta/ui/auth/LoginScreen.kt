@@ -231,12 +231,12 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // LOG IN button — bypasses backend until API is ready
+                    // LOG IN button
                     NeaktaButton(
                         text = "LOG IN",
-                        isLoading = false,
+                        isLoading = loginState is LoginState.Loading,
                         accentColor = ElectricBlue,
-                        onClick = { onLoginSuccess() }
+                        onClick = { viewModel.login(email, password) }
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

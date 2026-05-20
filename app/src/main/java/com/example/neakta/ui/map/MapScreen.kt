@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -23,12 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -161,13 +159,7 @@ fun MapScreen(
             }
         }
 
-        MapBottomNav(
-            onNavigateHome = onNavigateHome,
-            onNavigateAdd = onNavigateAdd,
-            onNavigateRanks = onNavigateRanks,
-            onNavigateProfile = onNavigateProfile,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+
     }
 }
 
@@ -510,88 +502,6 @@ private fun EmptyMapState(query: String, category: String) {
                 fontSize = 13.sp,
                 lineHeight = 19.sp,
                 color = MutedText
-            )
-        )
-    }
-}
-
-@Composable
-private fun MapBottomNav(
-    onNavigateHome: () -> Unit,
-    onNavigateAdd: () -> Unit,
-    onNavigateRanks: () -> Unit,
-    onNavigateProfile: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .background(SurfaceGlass)
-            .border(1.dp, Primary.copy(alpha = 0.55f), RoundedCornerShape(30.dp))
-            .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        MapNavItem(Icons.Default.Home, "Home", false, onNavigateHome)
-        MapNavItem(Icons.Default.Map, "Map", true) { }
-
-        Surface(
-            onClick = onNavigateAdd,
-            shape = CircleShape,
-            color = SurfaceGlass,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.70f)),
-            modifier = Modifier.size(56.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "+",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Primary
-                    )
-                )
-            }
-        }
-
-        MapNavItem(Icons.Default.KeyboardArrowUp, "Ranks", false, onNavigateRanks)
-        MapNavItem(Icons.Default.Person, "Profile", false, onNavigateProfile)
-    }
-}
-
-@Composable
-private fun MapNavItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (selected) Primary else MutedText.copy(alpha = 0.65f),
-            modifier = Modifier.size(19.dp)
-        )
-        Text(
-            text = label,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = if (selected) Primary else MutedText.copy(alpha = 0.65f)
             )
         )
     }

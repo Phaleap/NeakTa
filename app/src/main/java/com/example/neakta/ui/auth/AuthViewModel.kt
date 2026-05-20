@@ -7,6 +7,7 @@ import com.example.neakta.data.SessionManager
 import com.example.neakta.model.LoginRequest
 import com.example.neakta.model.RegisterRequest
 import com.example.neakta.network.RetrofitClient
+import retrofit2.Response
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -47,10 +48,10 @@ class AuthViewModel(private val session: SessionManager) : ViewModel() {
                     session.saveToken(token)                  // ← persist token
                     _loginState.value = LoginState.Success(token)
                 } else {
-                    _loginState.value = LoginState.Error("Invalid email or password")
+                    _loginState.value = LoginState.Error(response.errorMessage("Invalid email or password"))
                 }
-            } catch (_: Exception) {
-                _loginState.value = LoginState.Error("Cannot connect to server")
+            } catch (e: Exception) {
+                _loginState.value = LoginState.Error(e.connectMessage())
             }
         }
     }
@@ -88,14 +89,17 @@ class AuthViewModel(private val session: SessionManager) : ViewModel() {
                     session.saveToken(token)                  // ← persist token
                     _registerState.value = RegisterState.Success(token)
                 } else {
-                    val errorMsg = when (response.code()) {
-                        409  -> "Email or username already taken"
-                        else -> "Registration failed. Try again."
-                    }
-                    _registerState.value = RegisterState.Error(errorMsg)
+                    _registerState.value = RegisterState.Error(
+                        response.errorMessage(
+                            when (response.code()) {
+                                409 -> "Email or username already taken"
+                                else -> "Registration failed. Try again."
+                            }
+                        )
+                    )
                 }
-            } catch (_: Exception) {
-                _registerState.value = RegisterState.Error("Cannot connect to server")
+            } catch (e: Exception) {
+                _registerState.value = RegisterState.Error(e.connectMessage())
             }
         }
     }
@@ -113,4 +117,18 @@ class AuthViewModel(private val session: SessionManager) : ViewModel() {
             return AuthViewModel(session) as T
         }
     }
+}
+
+private fun Response<*>.errorMessage(fallback: String): String {
+    return errorBody()?.string()
+        ?.takeIf { it.isNotBlank() }
+        ?.take(160)
+        ?: fallback
+}
+
+private fun Exception.connectMessage(): String {
+    return localizedMessage
+        ?.takeIf { it.isNotBlank() }
+        ?.let { "Cannot connect to server: $it" }
+        ?: "Cannot connect to server"
 }

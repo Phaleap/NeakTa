@@ -7,9 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // 🔁 Change this to your actual backend URL
-    // For emulator testing: use 10.0.2.2 instead of localhost
-    private const val BASE_URL = "http://localhost:8080/"
+    const val BASE_URL = "https://equate-backside-kerosene.ngrok-free.dev/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -17,6 +15,12 @@ object RetrofitClient {
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("ngrok-skip-browser-warning", "true")
+                .build()
+            chain.proceed(request)
+        }
         .build()
 
     val instance: ApiService by lazy {
