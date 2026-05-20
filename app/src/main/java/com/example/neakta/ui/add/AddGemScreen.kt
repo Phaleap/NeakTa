@@ -39,7 +39,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.neakta.data.SessionManager
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.home.ElectricBlue
 import com.example.neakta.ui.home.Bubblegum
@@ -47,13 +49,11 @@ import com.example.neakta.ui.home.LimePop
 import com.example.neakta.ui.home.SoftOutline
 
 // ─── Colors local to this screen ─────────────────────────────
-private val InkText = Color(0xFFF7FAFC)
+private val InkText   = Color(0xFFF7FAFC)
 private val MutedText = Color(0xFFB8C2CC)
-private val NightBase = Color(0xFF0D1117)
-private val CardBg = Color(0xE61A202C)
-private val FieldBg = Color(0x991A202C)
+private val CardBg    = Color(0xE61A202C)
+private val FieldBg   = Color(0x991A202C)
 private val FieldBorder = Color(0x26FFFFFF)
-private val FieldFocused = Color(0xFF5FD3A6)
 
 // ─── Cambodian Provinces ─────────────────────────────────────
 val cambodianProvinces = listOf(
@@ -80,562 +80,514 @@ val availableTags = listOf(
 @Composable
 fun AddGemScreen(
     onBack: () -> Unit,
-    onPublished: () -> Unit = {}
+    onPublished: () -> Unit = {},
+    viewModel: AddGemViewModel = viewModel(
+        factory = AddGemViewModel.Factory(SessionManager(LocalContext.current))
+    )
 ) {
     val context = LocalContext.current
+    val addGemState by viewModel.state.collectAsState()
 
-    // Form state
-    var gemName by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("") }
-    var selectedProvince by remember { mutableStateOf("") }
-    var story by remember { mutableStateOf("") }
-    var localDirections by remember { mutableStateOf("") }
-    var selectedTags by remember { mutableStateOf(setOf<String>()) }
-    var photoUris by remember { mutableStateOf(listOf<Uri>()) }
+    // ── Derive loading/success from ViewModel state ───────────
+    val isSubmitting = addGemState is AddGemState.Loading
+    val showSuccess  = addGemState is AddGemState.Success
+
+    // ── Form state ────────────────────────────────────────────
+    var gemName                  by remember { mutableStateOf("") }
+    var selectedCategory         by remember { mutableStateOf("") }
+    var selectedProvince         by remember { mutableStateOf("") }
+    var story                    by remember { mutableStateOf("") }
+    var localDirections          by remember { mutableStateOf("") }
+    var selectedTags             by remember { mutableStateOf(setOf<String>()) }
+    var photoUris                by remember { mutableStateOf(listOf<Uri>()) }
     var provinceDropdownExpanded by remember { mutableStateOf(false) }
-    var isSubmitting by remember { mutableStateOf(false) }
-    var showSuccess by remember { mutableStateOf(false) }
+    var currentStep              by remember { mutableIntStateOf(0) }
 
-    // Current step (0-3)
-    var currentStep by remember { mutableIntStateOf(0) }
-
-    // Validation
-    val isStep1Valid = gemName.isNotBlank() &&
-            selectedCategory.isNotEmpty() &&
-            selectedProvince.isNotEmpty()
+    // ── Validation ────────────────────────────────────────────
+    val isStep1Valid = gemName.isNotBlank() && selectedCategory.isNotEmpty() && selectedProvince.isNotEmpty()
     val isStep2Valid = story.length >= 20
-    val canPublish = isStep1Valid && isStep2Valid
+    val canPublish   = isStep1Valid && isStep2Valid
 
-    // Photo picker
+    // ── Launchers ─────────────────────────────────────────────
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
+        ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         val remaining = 5 - photoUris.size
-        photoUris = (photoUris + uris.take(remaining))
+        photoUris = photoUris + uris.take(remaining)
     }
 
-    // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) {
-            // TODO: get actual GPS coordinates
-            selectedProvince = selectedProvince // trigger recompose
+        // TODO: Use FusedLocationProviderClient here to get real GPS coords
+    }
+
+    // ── Snackbar for errors ───────────────────────────────────
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(addGemState) {
+        if (addGemState is AddGemState.Error) {
+            snackbarHostState.showSnackbar(
+                message = (addGemState as AddGemState.Error).message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.resetState()
         }
     }
 
-    // Success screen
+    // ── Success screen ────────────────────────────────────────
     if (showSuccess) {
-        GemPublishedSuccess(
-            gemName = gemName,
-            onDone = onPublished
-        )
+        GemPublishedSuccess(gemName = gemName, onDone = onPublished)
         return
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0A1020),
-                        Color(0xFF15112E),
-                        Color(0xFF0A1020)
-                    )
-                )
-            )
-    ) {
-        Column(
+    // ── Submit helper (called from both Publish buttons) ──────
+    val onSubmit = {
+        viewModel.submitPin(
+            title        = gemName,
+            story        = story,
+            address      = localDirections.ifBlank { selectedProvince },
+            provinceName = selectedProvince,
+            categoryName = selectedCategory,
+            lat          = 11.5564,   // TODO: replace with real GPS
+            lng          = 104.9282
+        )
+    }
+
+    Scaffold(
+        snackbarHost    = { SnackbarHost(snackbarHostState) },
+        containerColor  = Color.Transparent
+    ) { innerPadding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF0A1020), Color(0xFF15112E), Color(0xFF0A1020))
+                    )
+                )
         ) {
-            // ── STATUS BAR SPACE ──────────────────────────────
-            Spacer(modifier = Modifier.statusBarsPadding())
-
-            // ── TOP BAR ───────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(FieldBg, CircleShape)
-                        .border(1.dp, FieldBorder, CircleShape)
-                        .clickable { onBack() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = InkText,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Drop a Gem ✦",
-                        style = TextStyle(
-                            fontFamily = Cinzel,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = InkText
-                        )
-                    )
-                    Text(
-                        text = "Share a hidden place with Cambodia",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 9.sp,
-                            color = MutedText
-                        )
-                    )
-                }
-
-                // Publish button
-                Box(
-                    modifier = Modifier
-                        .background(
-                            if (canPublish) LimePop else LimePop.copy(alpha = 0.3f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .clickable(enabled = canPublish && !isSubmitting) {
-                            isSubmitting = true
-                            showSuccess = true
-                        }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = if (isSubmitting) "..." else "Publish",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF17122A)
-                        )
-                    )
-                }
-            }
-
-            // ── STEP INDICATOR ────────────────────────────────
-            StepIndicator(currentStep = currentStep, totalSteps = 4)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── PHOTO UPLOAD ──────────────────────────────────
-            PhotoUploadSection(
-                photoUris = photoUris,
-                onAddPhotos = { photoPickerLauncher.launch("image/*") },
-                onRemovePhoto = { uri -> photoUris = photoUris.filter { it != uri } }
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ── FORM FIELDS ───────────────────────────────────
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
+                Spacer(modifier = Modifier.statusBarsPadding())
 
-                // Gem Name
-                GemFormField(label = "GEM NAME") {
-                    OutlinedTextField(
-                        value = gemName,
-                        onValueChange = {
-                            if (it.length <= 80) gemName = it
-                            currentStep = if (gemName.isNotBlank()) 1 else 0
-                        },
-                        placeholder = {
-                            Text(
-                                "e.g. Baphnom Market, Wat Phnom Kulen...",
-                                style = TextStyle(
-                                    fontSize = 12.sp,
-                                    color = MutedText.copy(alpha = 0.5f)
-                                )
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ElectricBlue,
-                            unfocusedBorderColor = FieldBorder,
-                            focusedTextColor = InkText,
-                            unfocusedTextColor = InkText,
-                            cursorColor = ElectricBlue,
-                            focusedContainerColor = FieldBg,
-                            unfocusedContainerColor = FieldBg
-                        ),
-                        singleLine = true,
-                        supportingText = {
-                            Text(
-                                "${gemName.length}/80",
-                                style = TextStyle(
-                                    fontSize = 9.sp,
-                                    color = MutedText.copy(alpha = 0.4f)
-                                )
-                            )
-                        }
-                    )
-                }
-
-                // Category chips
-                GemFormField(label = "CATEGORY") {
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // ── TOP BAR ───────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    // Back button
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(FieldBg, CircleShape)
+                            .border(1.dp, FieldBorder, CircleShape)
+                            .clickable { onBack() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        gemCategories.forEach { category ->
-                            val isSelected = selectedCategory == category
-                            CategoryChip(
-                                text = category,
-                                isSelected = isSelected,
-                                onClick = {
-                                    selectedCategory = category
-                                    if (selectedProvince.isNotEmpty()) currentStep = 2
-                                    else currentStep = 1
-                                }
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint     = InkText,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    // Title
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text  = "Drop a Gem ✦",
+                            style = TextStyle(
+                                fontFamily = Cinzel,
+                                fontSize   = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = InkText
+                            )
+                        )
+                        Text(
+                            text  = "Share a hidden place with Cambodia",
+                            style = TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize   = 9.sp,
+                                color      = MutedText
+                            )
+                        )
+                    }
+
+                    // Top-bar Publish button
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (canPublish) LimePop else LimePop.copy(alpha = 0.3f),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable(enabled = canPublish && !isSubmitting) { onSubmit() }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier  = Modifier.size(14.dp),
+                                color     = Color(0xFF17122A),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text  = "Publish",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize   = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color      = Color(0xFF17122A)
+                                )
                             )
                         }
                     }
                 }
 
-                // Province dropdown
-                GemFormField(label = "PROVINCE") {
-                    ExposedDropdownMenuBox(
-                        expanded = provinceDropdownExpanded,
-                        onExpandedChange = { provinceDropdownExpanded = it }
-                    ) {
+                // ── STEP INDICATOR ────────────────────────────
+                StepIndicator(currentStep = currentStep, totalSteps = 4)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ── PHOTO UPLOAD ──────────────────────────────
+                PhotoUploadSection(
+                    photoUris    = photoUris,
+                    onAddPhotos  = { photoPickerLauncher.launch("image/*") },
+                    onRemovePhoto = { uri -> photoUris = photoUris.filter { it != uri } }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // ── FORM FIELDS ───────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+
+                    // Gem Name
+                    GemFormField(label = "GEM NAME") {
                         OutlinedTextField(
-                            value = selectedProvince.ifEmpty { "Select your province" },
-                            onValueChange = {},
-                            readOnly = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ElectricBlue,
-                                unfocusedBorderColor = FieldBorder,
-                                focusedTextColor = if (selectedProvince.isEmpty()) MutedText.copy(alpha = 0.5f) else InkText,
-                                unfocusedTextColor = if (selectedProvince.isEmpty()) MutedText.copy(alpha = 0.5f) else InkText,
-                                focusedContainerColor = FieldBg,
+                            value         = gemName,
+                            onValueChange = {
+                                if (it.length <= 80) gemName = it
+                                currentStep = if (gemName.isNotBlank()) 1 else 0
+                            },
+                            placeholder = {
+                                Text(
+                                    "e.g. Baphnom Market, Wat Phnom Kulen...",
+                                    style = TextStyle(fontSize = 12.sp, color = MutedText.copy(alpha = 0.5f))
+                                )
+                            },
+                            modifier      = Modifier.fillMaxWidth(),
+                            shape         = RoundedCornerShape(14.dp),
+                            colors        = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor     = ElectricBlue,
+                                unfocusedBorderColor   = FieldBorder,
+                                focusedTextColor       = InkText,
+                                unfocusedTextColor     = InkText,
+                                cursorColor            = ElectricBlue,
+                                focusedContainerColor  = FieldBg,
                                 unfocusedContainerColor = FieldBg
                             ),
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    tint = MutedText
+                            singleLine    = true,
+                            supportingText = {
+                                Text(
+                                    "${gemName.length}/80",
+                                    style = TextStyle(fontSize = 9.sp, color = MutedText.copy(alpha = 0.4f))
                                 )
                             }
                         )
-                        ExposedDropdownMenu(
-                            expanded = provinceDropdownExpanded,
-                            onDismissRequest = { provinceDropdownExpanded = false },
-                            modifier = Modifier.background(Color(0xFF1B1A3D))
+                    }
+
+                    // Category chips
+                    GemFormField(label = "CATEGORY") {
+                        Row(
+                            modifier            = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            cambodianProvinces.forEach { province ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            province,
-                                            style = TextStyle(
-                                                fontSize = 13.sp,
-                                                color = if (province == selectedProvince)
-                                                    LimePop else InkText
-                                            )
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedProvince = province
-                                        provinceDropdownExpanded = false
-                                        if (selectedCategory.isNotEmpty()) currentStep = 2
-                                        else currentStep = 1
+                            gemCategories.forEach { category ->
+                                CategoryChip(
+                                    text       = category,
+                                    isSelected = selectedCategory == category,
+                                    onClick    = {
+                                        selectedCategory = category
+                                        currentStep = if (selectedProvince.isNotEmpty()) 2 else 1
                                     }
                                 )
                             }
                         }
                     }
-                }
 
-                // Divider
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(0.5.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color.Transparent,
-                                    ElectricBlue.copy(alpha = 0.3f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-
-                // Story
-                GemFormField(
-                    label = "THE STORY",
-                    sublabel = "What makes this place special? Min 20 characters."
-                ) {
-                    OutlinedTextField(
-                        value = story,
-                        onValueChange = {
-                            story = it
-                            if (it.length >= 20) currentStep = maxOf(currentStep, 3)
-                        },
-                        placeholder = {
-                            Text(
-                                "This place has been here since my grandmother's time...",
-                                style = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontStyle = FontStyle.Italic,
-                                    color = MutedText.copy(alpha = 0.4f)
-                                )
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ElectricBlue,
-                            unfocusedBorderColor = FieldBorder,
-                            focusedTextColor = InkText,
-                            unfocusedTextColor = InkText,
-                            cursorColor = ElectricBlue,
-                            focusedContainerColor = FieldBg,
-                            unfocusedContainerColor = FieldBg
-                        ),
-                        supportingText = {
-                            Text(
-                                "${story.length} chars ${if (story.length < 20) "· need ${20 - story.length} more" else "✓"}",
-                                style = TextStyle(
-                                    fontSize = 9.sp,
-                                    color = if (story.length >= 20)
-                                        LimePop else MutedText.copy(alpha = 0.4f)
-                                )
-                            )
-                        }
-                    )
-                }
-
-                // Location
-                GemFormField(label = "LOCATION") {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(FieldBg, RoundedCornerShape(14.dp))
-                            .border(1.dp, FieldBorder, RoundedCornerShape(14.dp))
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    // Province dropdown
+                    GemFormField(label = "PROVINCE") {
+                        ExposedDropdownMenuBox(
+                            expanded        = provinceDropdownExpanded,
+                            onExpandedChange = { provinceDropdownExpanded = it }
                         ) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = ElectricBlue,
-                                modifier = Modifier.size(20.dp)
+                            OutlinedTextField(
+                                value         = selectedProvince.ifEmpty { "Select your province" },
+                                onValueChange = {},
+                                readOnly      = true,
+                                modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                                shape         = RoundedCornerShape(14.dp),
+                                colors        = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor      = ElectricBlue,
+                                    unfocusedBorderColor    = FieldBorder,
+                                    focusedTextColor        = if (selectedProvince.isEmpty()) MutedText.copy(alpha = 0.5f) else InkText,
+                                    unfocusedTextColor      = if (selectedProvince.isEmpty()) MutedText.copy(alpha = 0.5f) else InkText,
+                                    focusedContainerColor   = FieldBg,
+                                    unfocusedContainerColor = FieldBg
+                                ),
+                                trailingIcon  = {
+                                    Icon(Icons.Default.ArrowDropDown, null, tint = MutedText)
+                                }
                             )
-                            Column {
-                                Text(
-                                    text = if (selectedProvince.isEmpty())
-                                        "Tap to use your location"
-                                    else
-                                        "$selectedProvince Province",
-                                    style = TextStyle(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = InkText
+                            ExposedDropdownMenu(
+                                expanded        = provinceDropdownExpanded,
+                                onDismissRequest = { provinceDropdownExpanded = false },
+                                modifier        = Modifier.background(Color(0xFF1B1A3D))
+                            ) {
+                                cambodianProvinces.forEach { province ->
+                                    DropdownMenuItem(
+                                        text    = {
+                                            Text(
+                                                province,
+                                                style = TextStyle(
+                                                    fontSize = 13.sp,
+                                                    color    = if (province == selectedProvince) LimePop else InkText
+                                                )
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedProvince         = province
+                                            provinceDropdownExpanded = false
+                                            currentStep = if (selectedCategory.isNotEmpty()) 2 else 1
+                                        }
                                     )
+                                }
+                            }
+                        }
+                    }
+
+                    // Divider
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Transparent, ElectricBlue.copy(alpha = 0.3f), Color.Transparent)
                                 )
+                            )
+                    )
+
+                    // Story
+                    GemFormField(
+                        label    = "THE STORY",
+                        sublabel = "What makes this place special? Min 20 characters."
+                    ) {
+                        OutlinedTextField(
+                            value         = story,
+                            onValueChange = {
+                                story = it
+                                if (it.length >= 20) currentStep = maxOf(currentStep, 3)
+                            },
+                            placeholder = {
                                 Text(
-                                    text = "GPS coordinates will be captured",
+                                    "This place has been here since my grandmother's time...",
+                                    style = TextStyle(fontSize = 12.sp, fontStyle = FontStyle.Italic, color = MutedText.copy(alpha = 0.4f))
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            shape    = RoundedCornerShape(14.dp),
+                            colors   = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor      = ElectricBlue,
+                                unfocusedBorderColor    = FieldBorder,
+                                focusedTextColor        = InkText,
+                                unfocusedTextColor      = InkText,
+                                cursorColor             = ElectricBlue,
+                                focusedContainerColor   = FieldBg,
+                                unfocusedContainerColor = FieldBg
+                            ),
+                            supportingText = {
+                                Text(
+                                    "${story.length} chars ${if (story.length < 20) "· need ${20 - story.length} more" else "✓"}",
                                     style = TextStyle(
                                         fontSize = 9.sp,
-                                        color = MutedText.copy(alpha = 0.6f)
+                                        color    = if (story.length >= 20) LimePop else MutedText.copy(alpha = 0.4f)
+                                    )
+                                )
+                            }
+                        )
+                    }
+
+                    // Location
+                    GemFormField(label = "LOCATION") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(FieldBg, RoundedCornerShape(14.dp))
+                                .border(1.dp, FieldBorder, RoundedCornerShape(14.dp))
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment     = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(Icons.Default.LocationOn, null, tint = ElectricBlue, modifier = Modifier.size(20.dp))
+                                Column {
+                                    Text(
+                                        text  = if (selectedProvince.isEmpty()) "Tap to use your location" else "$selectedProvince Province",
+                                        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = InkText)
+                                    )
+                                    Text(
+                                        text  = "GPS coordinates will be captured",
+                                        style = TextStyle(fontSize = 9.sp, color = MutedText.copy(alpha = 0.6f))
+                                    )
+                                }
+                            }
+                            Text(
+                                text  = "Use GPS",
+                                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = ElectricBlue),
+                                modifier = Modifier.clickable {
+                                    val perm = Manifest.permission.ACCESS_FINE_LOCATION
+                                    if (ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED) {
+                                        // TODO: call FusedLocationProviderClient
+                                    } else {
+                                        locationPermissionLauncher.launch(perm)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    // Local directions
+                    GemFormField(
+                        label    = "LOCAL DIRECTIONS",
+                        sublabel = "Optional — how would a local describe getting here?"
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(ElectricBlue.copy(alpha = 0.04f), RoundedCornerShape(14.dp))
+                                .border(1.dp, ElectricBlue.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .fillMaxHeight()
+                                        .background(ElectricBlue.copy(alpha = 0.5f), RoundedCornerShape(3.dp))
+                                )
+                                OutlinedTextField(
+                                    value         = localDirections,
+                                    onValueChange = { localDirections = it },
+                                    placeholder = {
+                                        Text(
+                                            "e.g. Turn left at the big mango tree, ask for Ta Chan's stall...",
+                                            style = TextStyle(fontSize = 11.sp, fontStyle = FontStyle.Italic, color = MutedText.copy(alpha = 0.4f))
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(90.dp),
+                                    colors   = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor      = Color.Transparent,
+                                        unfocusedBorderColor    = Color.Transparent,
+                                        focusedTextColor        = InkText,
+                                        unfocusedTextColor      = InkText,
+                                        cursorColor             = ElectricBlue,
+                                        focusedContainerColor   = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent
                                     )
                                 )
                             }
                         }
-                        Text(
-                            text = "Use GPS",
-                            style = TextStyle(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = ElectricBlue
-                            ),
-                            modifier = Modifier.clickable {
-                                val permission = Manifest.permission.ACCESS_FINE_LOCATION
-                                if (ContextCompat.checkSelfPermission(context, permission)
-                                    == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    // TODO: get GPS coords
-                                } else {
-                                    locationPermissionLauncher.launch(permission)
-                                }
-                            }
-                        )
                     }
-                }
 
-                // Local directions
-                GemFormField(
-                    label = "LOCAL DIRECTIONS",
-                    sublabel = "Optional — how would a local describe getting here?"
-                ) {
-                    Column(
+                    // Tags
+                    GemFormField(label = "TAGS", sublabel = "Select all that apply") {
+                        Row(
+                            modifier            = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            availableTags.forEach { tag ->
+                                val isSelected = selectedTags.contains(tag)
+                                TagChip(
+                                    text       = tag,
+                                    isSelected = isSelected,
+                                    onClick    = {
+                                        selectedTags = if (isSelected) selectedTags - tag else selectedTags + tag
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // ── BOTTOM SUBMIT BUTTON ──────────────────
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(18.dp))
                             .background(
-                                ElectricBlue.copy(alpha = 0.04f),
-                                RoundedCornerShape(14.dp)
+                                if (canPublish)
+                                    Brush.horizontalGradient(listOf(ElectricBlue, Bubblegum))
+                                else
+                                    Brush.horizontalGradient(listOf(ElectricBlue.copy(alpha = 0.3f), Bubblegum.copy(alpha = 0.3f)))
                             )
-                            .border(
-                                1.dp,
-                                ElectricBlue.copy(alpha = 0.2f),
-                                RoundedCornerShape(14.dp)
-                            )
+                            .clickable(enabled = canPublish && !isSubmitting) { onSubmit() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .width(3.dp)
-                                    .fillMaxHeight()
-                                    .background(
-                                        ElectricBlue.copy(alpha = 0.5f),
-                                        RoundedCornerShape(3.dp)
-                                    )
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier    = Modifier.size(22.dp),
+                                color       = Color(0xFF0A1020),
+                                strokeWidth = 2.5.dp
                             )
-                            OutlinedTextField(
-                                value = localDirections,
-                                onValueChange = { localDirections = it },
-                                placeholder = {
-                                    Text(
-                                        "e.g. Turn left at the big mango tree, ask for Ta Chan's stall...",
-                                        style = TextStyle(
-                                            fontSize = 11.sp,
-                                            fontStyle = FontStyle.Italic,
-                                            color = MutedText.copy(alpha = 0.4f)
-                                        )
-                                    )
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(90.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = InkText,
-                                    unfocusedTextColor = InkText,
-                                    cursorColor = ElectricBlue,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent
+                        } else {
+                            Text(
+                                text  = "✦ Share This Gem with Cambodia",
+                                style = TextStyle(
+                                    fontFamily  = Cinzel,
+                                    fontSize    = 12.sp,
+                                    fontWeight  = FontWeight.Bold,
+                                    color       = if (canPublish) Color(0xFF0A1020) else MutedText,
+                                    letterSpacing = 0.5.sp
                                 )
                             )
                         }
                     }
-                }
 
-                // Tags
-                GemFormField(
-                    label = "TAGS",
-                    sublabel = "Select all that apply"
-                ) {
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        availableTags.forEach { tag ->
-                            val isSelected = selectedTags.contains(tag)
-                            TagChip(
-                                text = tag,
-                                isSelected = isSelected,
-                                onClick = {
-                                    selectedTags = if (isSelected)
-                                        selectedTags - tag
-                                    else
-                                        selectedTags + tag
-                                }
-                            )
-                        }
+                    // Validation hint
+                    if (!canPublish) {
+                        Text(
+                            text = buildString {
+                                val missing = mutableListOf<String>()
+                                if (gemName.isBlank()) missing.add("gem name")
+                                if (selectedCategory.isEmpty()) missing.add("category")
+                                if (selectedProvince.isEmpty()) missing.add("province")
+                                if (story.length < 20) missing.add("story (min 20 chars)")
+                                append("Still needed: ${missing.joinToString(" · ")}")
+                            },
+                            style    = TextStyle(fontSize = 10.sp, color = MutedText.copy(alpha = 0.5f), textAlign = TextAlign.Center),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
+
+                    Spacer(modifier = Modifier.navigationBarsPadding())
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-
-                // ── SUBMIT BUTTON ─────────────────────────────
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(
-                            if (canPublish)
-                                Brush.horizontalGradient(
-                                    listOf(ElectricBlue, Bubblegum)
-                                )
-                            else
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        ElectricBlue.copy(alpha = 0.3f),
-                                        Bubblegum.copy(alpha = 0.3f)
-                                    )
-                                )
-                        )
-                        .clickable(enabled = canPublish && !isSubmitting) {
-                            isSubmitting = true
-                            showSuccess = true
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (isSubmitting) "Publishing..." else "✦ Share This Gem with Cambodia",
-                        style = TextStyle(
-                            fontFamily = Cinzel,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (canPublish) Color(0xFF0A1020) else MutedText,
-                            letterSpacing = 0.5.sp
-                        )
-                    )
-                }
-
-                // Validation hint
-                if (!canPublish) {
-                    Text(
-                        text = buildString {
-                            val missing = mutableListOf<String>()
-                            if (gemName.isBlank()) missing.add("gem name")
-                            if (selectedCategory.isEmpty()) missing.add("category")
-                            if (selectedProvince.isEmpty()) missing.add("province")
-                            if (story.length < 20) missing.add("story (min 20 chars)")
-                            append("Still needed: ${missing.joinToString(" · ")}")
-                        },
-                        style = TextStyle(
-                            fontSize = 10.sp,
-                            color = MutedText.copy(alpha = 0.5f),
-                            textAlign = TextAlign.Center
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Spacer(modifier = Modifier.navigationBarsPadding())
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -645,17 +597,15 @@ fun AddGemScreen(
 @Composable
 private fun StepIndicator(currentStep: Int, totalSteps: Int) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 18.dp),
+        modifier              = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         repeat(totalSteps) { index ->
             val color by animateColorAsState(
                 targetValue = when {
-                    index < currentStep -> LimePop
+                    index < currentStep  -> LimePop
                     index == currentStep -> ElectricBlue
-                    else -> Color(0x1AFFFFFF)
+                    else                 -> Color(0x1AFFFFFF)
                 },
                 animationSpec = tween(300),
                 label = "step_color"
@@ -678,13 +628,8 @@ private fun PhotoUploadSection(
     onAddPhotos: () -> Unit,
     onRemovePhoto: (Uri) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 18.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
         if (photoUris.isEmpty()) {
-            // Empty upload zone
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -693,12 +638,7 @@ private fun PhotoUploadSection(
                     .background(ElectricBlue.copy(alpha = 0.04f))
                     .border(
                         1.5.dp,
-                        Brush.horizontalGradient(
-                            listOf(
-                                ElectricBlue.copy(alpha = 0.4f),
-                                Bubblegum.copy(alpha = 0.4f)
-                            )
-                        ),
+                        Brush.horizontalGradient(listOf(ElectricBlue.copy(alpha = 0.4f), Bubblegum.copy(alpha = 0.4f))),
                         RoundedCornerShape(18.dp)
                     )
                     .clickable { onAddPhotos() },
@@ -708,57 +648,20 @@ private fun PhotoUploadSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.Default.CameraAlt,
-                        contentDescription = null,
-                        tint = ElectricBlue,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Text(
-                        text = "Add Photos",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = ElectricBlue
-                        )
-                    )
-                    Text(
-                        text = "Show the world what makes this place special",
-                        style = TextStyle(
-                            fontSize = 10.sp,
-                            color = MutedText.copy(alpha = 0.6f),
-                            textAlign = TextAlign.Center
-                        )
-                    )
-                    Text(
-                        text = "0 / 5 photos",
-                        style = TextStyle(
-                            fontSize = 9.sp,
-                            color = MutedText.copy(alpha = 0.3f)
-                        )
-                    )
+                    Icon(Icons.Default.CameraAlt, null, tint = ElectricBlue, modifier = Modifier.size(32.dp))
+                    Text("Add Photos", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = ElectricBlue))
+                    Text("Show the world what makes this place special", style = TextStyle(fontSize = 10.sp, color = MutedText.copy(alpha = 0.6f), textAlign = TextAlign.Center))
+                    Text("0 / 5 photos", style = TextStyle(fontSize = 9.sp, color = MutedText.copy(alpha = 0.3f)))
                 }
             }
         } else {
-            // Photos preview row
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                modifier              = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 photoUris.forEach { uri ->
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                    ) {
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        // Remove button
+                    Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(14.dp))) {
+                        AsyncImage(model = uri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -768,48 +671,23 @@ private fun PhotoUploadSection(
                                 .clickable { onRemovePhoto(uri) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Remove",
-                                tint = InkText,
-                                modifier = Modifier.size(12.dp)
-                            )
+                            Icon(Icons.Default.Close, "Remove", tint = InkText, modifier = Modifier.size(12.dp))
                         }
                     }
                 }
-                // Add more button
                 if (photoUris.size < 5) {
                     Box(
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(ElectricBlue.copy(alpha = 0.08f))
-                            .border(
-                                1.dp,
-                                ElectricBlue.copy(alpha = 0.3f),
-                                RoundedCornerShape(14.dp)
-                            )
+                            .border(1.dp, ElectricBlue.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
                             .clickable { onAddPhotos() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                contentDescription = null,
-                                tint = ElectricBlue,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Text(
-                                text = "${photoUris.size}/5",
-                                style = TextStyle(
-                                    fontSize = 9.sp,
-                                    color = ElectricBlue,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.CameraAlt, null, tint = ElectricBlue, modifier = Modifier.size(22.dp))
+                            Text("${photoUris.size}/5", style = TextStyle(fontSize = 9.sp, color = ElectricBlue, fontWeight = FontWeight.Bold))
                         }
                     }
                 }
@@ -820,35 +698,11 @@ private fun PhotoUploadSection(
 
 // ─── Form Field Wrapper ───────────────────────────────────────
 @Composable
-private fun GemFormField(
-    label: String,
-    sublabel: String = "",
-    content: @Composable () -> Unit
-) {
+private fun GemFormField(label: String, sublabel: String = "", content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = label,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.5.sp,
-                    color = ElectricBlue
-                )
-            )
-            if (sublabel.isNotBlank()) {
-                Text(
-                    text = sublabel,
-                    style = TextStyle(
-                        fontSize = 9.sp,
-                        color = MutedText.copy(alpha = 0.4f)
-                    )
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(label, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp, color = ElectricBlue))
+            if (sublabel.isNotBlank()) Text(sublabel, style = TextStyle(fontSize = 9.sp, color = MutedText.copy(alpha = 0.4f)))
         }
         content()
     }
@@ -856,24 +710,10 @@ private fun GemFormField(
 
 // ─── Category Chip ────────────────────────────────────────────
 @Composable
-private fun CategoryChip(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor by animateColorAsState(
-        targetValue = if (isSelected) LimePop.copy(alpha = 0.2f) else FieldBg,
-        label = "chip_bg"
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) LimePop else FieldBorder,
-        label = "chip_border"
-    )
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected) LimePop else MutedText,
-        label = "chip_text"
-    )
-
+private fun CategoryChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    val bgColor     by animateColorAsState(if (isSelected) LimePop.copy(alpha = 0.2f) else FieldBg, label = "chip_bg")
+    val borderColor by animateColorAsState(if (isSelected) LimePop else FieldBorder, label = "chip_border")
+    val textColor   by animateColorAsState(if (isSelected) LimePop else MutedText, label = "chip_text")
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -882,34 +722,15 @@ private fun CategoryChip(
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = textColor
-            )
-        )
+        Text(text, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = textColor))
     }
 }
 
 // ─── Tag Chip ─────────────────────────────────────────────────
 @Composable
-private fun TagChip(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor by animateColorAsState(
-        targetValue = if (isSelected) Bubblegum.copy(alpha = 0.15f) else FieldBg,
-        label = "tag_bg"
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) Bubblegum else FieldBorder,
-        label = "tag_border"
-    )
-
+private fun TagChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    val bgColor     by animateColorAsState(if (isSelected) Bubblegum.copy(alpha = 0.15f) else FieldBg, label = "tag_bg")
+    val borderColor by animateColorAsState(if (isSelected) Bubblegum else FieldBorder, label = "tag_border")
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -919,13 +740,13 @@ private fun TagChip(
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(
-            text = text,
+            text,
             style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontFamily    = FontFamily.SansSerif,
+                fontSize      = 9.sp,
+                fontWeight    = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp,
-                color = if (isSelected) Bubblegum else MutedText.copy(alpha = 0.6f)
+                color         = if (isSelected) Bubblegum else MutedText.copy(alpha = 0.6f)
             )
         )
     }
@@ -933,71 +754,35 @@ private fun TagChip(
 
 // ─── Success Screen ───────────────────────────────────────────
 @Composable
-private fun GemPublishedSuccess(
-    gemName: String,
-    onDone: () -> Unit
-) {
+private fun GemPublishedSuccess(gemName: String, onDone: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0A1020), Color(0xFF15112E), Color(0xFF0A1020))
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(Color(0xFF0A1020), Color(0xFF15112E), Color(0xFF0A1020)))),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(40.dp)
+            modifier            = Modifier.padding(40.dp)
         ) {
-            Text(text = "✦", fontSize = 56.sp, color = LimePop)
-
+            Text("✦", fontSize = 56.sp, color = LimePop)
+            Text("Gem Dropped!", style = TextStyle(fontFamily = Cinzel, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = InkText))
             Text(
-                text = "Gem Dropped!",
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = InkText
-                )
+                "\"$gemName\" is now part of Cambodia's living archive. Thank you for preserving what matters.",
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = MutedText, lineHeight = 22.sp, textAlign = TextAlign.Center)
             )
-
-            Text(
-                text = "\"$gemName\" is now part of Cambodia's living archive. Thank you for preserving what matters.",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 14.sp,
-                    color = MutedText,
-                    lineHeight = 22.sp,
-                    textAlign = TextAlign.Center
-                )
-            )
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        Brush.horizontalGradient(listOf(ElectricBlue, Bubblegum))
-                    )
+                    .background(Brush.horizontalGradient(listOf(ElectricBlue, Bubblegum)))
                     .clickable { onDone() },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Back to Home",
-                    style = TextStyle(
-                        fontFamily = Cinzel,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0A1020),
-                        letterSpacing = 0.5.sp
-                    )
-                )
+                Text("Back to Home", style = TextStyle(fontFamily = Cinzel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0A1020), letterSpacing = 0.5.sp))
             }
         }
     }

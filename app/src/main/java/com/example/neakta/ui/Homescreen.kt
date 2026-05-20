@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -27,22 +26,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TravelExplore
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,131 +47,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.neakta.data.SessionManager
 import com.example.neakta.ui.auth.Cinzel
 
 // ─── Data ────────────────────────────────────────────────────
 data class PinCard(
-    val id: Int,
+    val id: String,
     val title: String,
     val province: String,
     val category: String,
     val votes: Int,
     val story: String,
     val imageUrl: String,
-    val mediaUrls: List<String> = listOf(imageUrl),
     val author: String,
     val timeAgo: String,
     val lat: Double = 11.5564,
     val lng: Double = 104.9282,
+    val tags: List<String> = emptyList(),
+    // ✅ Add these back
+    val mediaUrls: List<String> = emptyList(),
     val localDirections: String = "",
     val stillExistsPct: Int = 97,
-    val yearDiscovered: String = "2024",
-    val tags: List<String> = emptyList()
-)
-
-val trendingPins = listOf(
-    PinCard(
-        id = 1,
-        title = "បាយហាំ លោក តា ចាន់",
-        province = "Siem Reap",
-        category = "Food",
-        votes = 128,
-        story = "A humble stall that has served the same recipe for 40 years, hidden behind the old market where only locals know to look.",
-        imageUrl = "https://sovrinmagazine.com/assets/uploadeditor/photo/772390d4204fd2eccb36c60223bccd04.jpg",
-        author = "Sophea",
-        timeAgo = "2h ago",
-        lat = 13.3671, lng = 103.8448,
-        localDirections = "Behind the old market near Pub Street. Look for the blue plastic chairs — no signboard.",
-        stillExistsPct = 94, yearDiscovered = "2021",
-        tags = listOf("STREET FOOD", "BREAKFAST", "LOCALS ONLY")
-    ),
-    PinCard(
-        id = 2,
-        title = "វត្តភ្នំជីសូរ",
-        province = "Kampot",
-        category = "Pagoda",
-        votes = 94,
-        story = "Perched on a limestone hill, this pagoda offers a breathtaking view at sunrise that no tourist guide has ever written about.",
-        imageUrl = "https://sovrinmagazine.com/assets/uploadeditor/photo/772390d4204fd2eccb36c60223bccd04.jpg",
-        author = "Dara",
-        timeAgo = "5h ago",
-        lat = 10.6333, lng = 104.1833,
-        localDirections = "Take the road past Kampot river bridge, turn right at the big tamarind tree. The path up is 20 minutes on foot.",
-        stillExistsPct = 99, yearDiscovered = "2020",
-        tags = listOf("PAGODA", "SUNRISE", "HIDDEN")
-    ),
-    PinCard(
-        id = 3,
-        title = "ផ្សារចាស់ក្រោម",
-        province = "Phnom Penh",
-        category = "Market",
-        votes = 76,
-        story = "The oldest surviving wet market in the capital, where grandmothers still sell hand-woven silk passed down through generations.",
-        imageUrl = "https://sovrinmagazine.com/assets/uploadeditor/photo/772390d4204fd2eccb36c60223bccd04.jpg",
-        author = "Maly",
-        timeAgo = "1d ago",
-        lat = 11.5564, lng = 104.9282,
-        localDirections = "Near the riverside, south of Sisowath Quay. Enter through the narrow alley between the two pharmacies.",
-        stillExistsPct = 88, yearDiscovered = "2019",
-        tags = listOf("MARKET", "SILK", "HERITAGE")
-    ),
-)
-
-val recentPins = listOf(
-    PinCard(
-        id = 4,
-        title = "ជលប្រទានជ្រោយចង្វារ",
-        province = "Kandal",
-        category = "Nature",
-        votes = 43,
-        story = "A hidden riverside spot where fishermen gather at dawn. The mist over the Mekong here is unlike anything you have seen.",
-        imageUrl = "https://kptmedia.ap-south-1.linodeobjects.com/uploads/2025/04/487925095_1071515321676124_4446736152088688747_n-768x1024.jpg",
-        author = "Virak",
-        timeAgo = "3h ago",
-        lat = 11.2833, lng = 105.0167,
-        localDirections = "Follow the dirt road past Chroy Changvar bridge for 3km. Ask the fishermen at the dock.",
-        stillExistsPct = 91, yearDiscovered = "2023",
-        tags = listOf("NATURE", "RIVER", "DAWN")
-    ),
-    PinCard(
-        id = 5,
-        title = "កុដិព្រះសង្ឃចាស់",
-        province = "Battambang",
-        category = "Pagoda",
-        votes = 61,
-        story = "A crumbling monk's sanctuary hidden in bamboo forest. The carvings on the walls date back to the French colonial era.",
-        imageUrl = "https://kptmedia.ap-south-1.linodeobjects.com/uploads/2025/04/487925095_1071515321676124_4446736152088688747_n-768x1024.jpg",
-        author = "Chanthy",
-        timeAgo = "6h ago",
-        lat = 13.1, lng = 103.2,
-        localDirections = "2km west of Battambang train station. Enter the bamboo forest trail on the left side of Road 57.",
-        stillExistsPct = 76, yearDiscovered = "2022",
-        tags = listOf("PAGODA", "COLONIAL", "FOREST")
-    ),
-    PinCard(
-        id = 6,
-        title = "ឈ្មួញកាត់សូត្រ លោកម៉ែ ស៊ីម",
-        province = "Siem Reap",
-        category = "Craft",
-        votes = 88,
-        story = "One of the last remaining silk weavers using traditional hand looms. She weaves stories into every thread.",
-        imageUrl = "https://kptmedia.ap-south-1.linodeobjects.com/uploads/2025/04/487925095_1071515321676124_4446736152088688747_n-768x1024.jpg",
-        author = "Kosal",
-        timeAgo = "12h ago",
-        lat = 13.4, lng = 103.87,
-        localDirections = "Village of Koh Dach, 30 min from Siem Reap. Ask anyone for 'Mae Sim the weaver' — everyone knows her.",
-        stillExistsPct = 100, yearDiscovered = "2020",
-        tags = listOf("CRAFT", "SILK", "TRADITION")
-    ),
+    val yearDiscovered: String = "2024"
 )
 
 val provinceSpotlight = Triple("Battambang", 247, "The Bamboo Province")
@@ -195,27 +98,43 @@ private val GlassPanel = Color(0x991A202C)
 // ─── HomeScreen ──────────────────────────────────────────────
 @Composable
 fun HomeScreen(
-    onNavigateToMap: () -> Unit = {},
-    onNavigateToAdd: () -> Unit = {},
-    onNavigateToRanks: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onPinClick: (PinCard) -> Unit = {}
+    onPinClick: (PinCard) -> Unit = {},
+    viewModel: PinViewModel
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val session = remember { SessionManager(context) }
+    val viewModel: PinViewModel = viewModel(factory = PinViewModel.Factory(session))
+    val pinsState by viewModel.pinsState.collectAsState()
 
-    // ✅ Category filter state
     var selectedCategory by remember { mutableStateOf("All") }
 
-    // ✅ Filtered pins
-    val filteredTrending = if (selectedCategory == "All")
-        trendingPins
-    else
-        trendingPins.filter { it.category == selectedCategory }
+    // ✅ Convert PinResponse → PinCard and filter
+    val allPins = when (val state = pinsState) {
+        is PinsState.Success -> state.pins.map { pin ->
+            PinCard(
+                id = pin.id,
+                title = pin.title,
+                province = pin.provinceName ?: "",
+                category = pin.categoryName ?: "",
+                votes = pin.upvoteCount,
+                story = pin.story,
+                imageUrl = "", // no image URL from backend yet
+                author = pin.authorUsername ?: "",
+                timeAgo = pin.createdAt?.take(10) ?: "",
+                lat = pin.lat?.toDouble() ?: 11.5564,
+                lng = pin.lng?.toDouble() ?: 104.9282
+            )
+        }
+        else -> emptyList()
+    }
 
-    val filteredRecent = if (selectedCategory == "All")
-        recentPins
-    else
-        recentPins.filter { it.category == selectedCategory }
+    val filteredPins = if (selectedCategory == "All") allPins
+    else allPins.filter { it.category == selectedCategory }
+
+    // Top half = trending (most votes), bottom = recent (by time)
+    val trendingPins = filteredPins.sortedByDescending { it.votes }.take(5)
+    val recentPins = filteredPins.sortedByDescending { it.timeAgo }.take(10)
 
     Box(
         modifier = Modifier
@@ -246,17 +165,6 @@ fun HomeScreen(
                 )
         )
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(LimePop.copy(alpha = 0.10f), Color.Transparent)
-                    )
-                )
-        )
-
         Column(modifier = Modifier.fillMaxSize()) {
             HomeTopBar(onNavigateToProfile = onNavigateToProfile)
 
@@ -268,13 +176,12 @@ fun HomeScreen(
                 item {
                     HeroSpotlightCard(
                         province = provinceSpotlight.first,
-                        pinCount = provinceSpotlight.second,
+                        pinCount = allPins.size, // ✅ real count
                         tagline = provinceSpotlight.third,
                         onExploreClick = {}
                     )
                 }
 
-                // ✅ Category filter chips
                 item {
                     CategoryFilterRow(
                         selectedCategory = selectedCategory,
@@ -282,44 +189,62 @@ fun HomeScreen(
                     )
                 }
 
-                item {
-                    SectionHeader(
-                        eyebrow = "TRENDING NOW",
-                        title = "Spots everyone wants\non their feed",
-                        subtitle = ""
-                    )
-                }
-
-                item {
-                    TrendingRow(pins = filteredTrending, onPinClick = onPinClick)
-                }
-
-                if (filteredTrending.isEmpty()) {
-                    item { EmptyFilterState(category = selectedCategory) }
-                }
-
-                item {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        thickness = 1.dp,
-                        color = SoftOutline
-                    )
-                }
-
-                item {
-                    SectionHeader(
-                        eyebrow = "JUST DROPPED",
-                        title = "Fresh finds with\nreal local energy",
-                        subtitle = ""
-                    )
-                }
-
-                items(filteredRecent) { pin ->
-                    EditorialStoryCard(pin = pin, onPinClick = onPinClick)
-                }
-
-                if (filteredRecent.isEmpty()) {
-                    item { EmptyFilterState(category = selectedCategory) }
+                // ✅ Loading state
+                when (pinsState) {
+                    is PinsState.Loading -> item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = LimePop)
+                        }
+                    }
+                    is PinsState.Error -> item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Failed to load gems 😕",
+                                style = TextStyle(color = MutedText, fontSize = 14.sp)
+                            )
+                        }
+                    }
+                    is PinsState.Success -> {
+                        item {
+                            SectionHeader(
+                                eyebrow = "TRENDING NOW",
+                                title = "Spots everyone wants\non their feed",
+                                subtitle = ""
+                            )
+                        }
+                        item {
+                            TrendingRow(pins = trendingPins, onPinClick = onPinClick)
+                        }
+                        if (trendingPins.isEmpty()) {
+                            item { EmptyFilterState(category = selectedCategory) }
+                        }
+                        item {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                                thickness = 1.dp,
+                                color = SoftOutline
+                            )
+                        }
+                        item {
+                            SectionHeader(
+                                eyebrow = "JUST DROPPED",
+                                title = "Fresh finds with\nreal local energy",
+                                subtitle = ""
+                            )
+                        }
+                        items(recentPins) { pin ->
+                            EditorialStoryCard(pin = pin, onPinClick = onPinClick)
+                        }
+                        if (recentPins.isEmpty()) {
+                            item { EmptyFilterState(category = selectedCategory) }
+                        }
+                    }
                 }
 
                 item {
@@ -328,7 +253,6 @@ fun HomeScreen(
                     )
                 }
             }
-
         }
     }
 }
@@ -340,7 +264,6 @@ private fun CategoryFilterRow(
     onCategorySelected: (String) -> Unit
 ) {
     val categories = listOf("All", "Food", "Pagoda", "Nature", "Market", "Craft")
-
     Row(
         modifier = Modifier
             .horizontalScroll(rememberScrollState())
@@ -357,9 +280,7 @@ private fun CategoryFilterRow(
                         if (isSelected)
                             Brush.horizontalGradient(listOf(GlassPanel, GlassPanel))
                         else
-                            Brush.horizontalGradient(
-                                listOf(Color(0xFF191731), Color(0xFF191731))
-                            )
+                            Brush.horizontalGradient(listOf(Color(0xFF191731), Color(0xFF191731)))
                     )
                     .border(
                         width = 1.dp,
@@ -388,9 +309,7 @@ private fun CategoryFilterRow(
 @Composable
 private fun EmptyFilterState(category: String) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(40.dp),
+        modifier = Modifier.fillMaxWidth().padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -446,16 +365,12 @@ private fun HomeTopBar(onNavigateToProfile: () -> Unit) {
                 )
             )
         }
-
         Surface(
             shape = CircleShape,
             color = GlassPanel,
             border = androidx.compose.foundation.BorderStroke(1.dp, SoftOutline)
         ) {
-            IconButton(
-                onClick = onNavigateToProfile,
-                modifier = Modifier.size(44.dp)
-            ) {
+            IconButton(onClick = onNavigateToProfile, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
@@ -480,11 +395,7 @@ private fun HeroSpotlightCard(
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(CardStart, CardEnd)
-                )
-            )
+            .background(Brush.linearGradient(listOf(CardStart, CardEnd)))
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
@@ -529,7 +440,6 @@ private fun HeroSpotlightCard(
                         )
                     )
                 }
-
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = GlassPanel,
@@ -560,7 +470,6 @@ private fun HeroSpotlightCard(
                     }
                 }
             }
-
             Surface(
                 onClick = onExploreClick,
                 shape = RoundedCornerShape(18.dp),
@@ -663,7 +572,7 @@ private fun TrendingCard(pin: PinCard, rank: Int, onClick: () -> Unit) {
             .border(1.dp, SoftOutline, RoundedCornerShape(24.dp))
     ) {
         AsyncImage(
-            model = pin.imageUrl,
+            model = pin.imageUrl.ifBlank { null },
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -683,18 +592,14 @@ private fun TrendingCard(pin: PinCard, rank: Int, onClick: () -> Unit) {
                 )
         )
         Row(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(14.dp),
+            modifier = Modifier.align(Alignment.TopStart).padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CapsuleLabel(text = "#$rank rising")
             CapsuleLabel(text = pin.category.uppercase())
         }
         Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp),
+            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -785,22 +690,18 @@ private fun EditorialStoryCard(pin: PinCard, onPinClick: (PinCard) -> Unit) {
                 .width(118.dp)
                 .height(158.dp)
                 .clip(RoundedCornerShape(18.dp))
+                .background(CardStart)
         ) {
             AsyncImage(
-                model = pin.imageUrl,
+                model = pin.imageUrl.ifBlank { null },
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(10.dp)
-            ) {
+            Box(modifier = Modifier.align(Alignment.TopStart).padding(10.dp)) {
                 CapsuleLabel(text = pin.category.uppercase())
             }
         }
-
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -924,4 +825,3 @@ private fun CapsuleLabel(text: String) {
         )
     }
 }
-

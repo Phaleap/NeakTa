@@ -8,32 +8,31 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,8 +52,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.home.PinCard
-import com.example.neakta.ui.home.recentPins
-import com.example.neakta.ui.home.trendingPins
+import com.example.neakta.ui.home.PinViewModel
+import com.example.neakta.ui.home.PinsState
 
 private val InkText = Color(0xFFF7FAFC)
 private val MutedText = Color(0xFFB8C2CC)
@@ -67,16 +66,35 @@ private val Outline = Color(0x26FFFFFF)
 @Composable
 fun MapScreen(
     onPinClick: (PinCard) -> Unit,
-    onNavigateHome: () -> Unit = {},
-    onNavigateAdd: () -> Unit = {},
-    onNavigateRanks: () -> Unit = {},
-    onNavigateProfile: () -> Unit = {}
+    viewModel: PinViewModel
 ) {
+    val pinsState by viewModel.pinsState.collectAsState()
+
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
-    val pins = remember { trendingPins + recentPins }
     val categories = listOf("All", "Food", "Pagoda", "Nature", "Market", "Craft")
-    val filteredPins = pins.filter { pin ->
+
+    // ✅ Convert PinResponse → PinCard
+    val allPins = when (val state = pinsState) {
+        is PinsState.Success -> state.pins.map { pin ->
+            PinCard(
+                id = pin.id,
+                title = pin.title,
+                province = pin.provinceName ?: "",
+                category = pin.categoryName ?: "",
+                votes = pin.upvoteCount,
+                story = pin.story,
+                imageUrl = "",
+                author = pin.authorUsername ?: "",
+                timeAgo = pin.createdAt?.take(10) ?: "",
+                lat = pin.lat?.toDouble() ?: 11.5564,
+                lng = pin.lng?.toDouble() ?: 104.9282
+            )
+        }
+        else -> emptyList()
+    }
+
+    val filteredPins = allPins.filter { pin ->
         val matchesCategory = selectedCategory == "All" || pin.category == selectedCategory
         val matchesQuery = query.isBlank() ||
                 pin.title.contains(query, ignoreCase = true) ||
@@ -90,11 +108,7 @@ fun MapScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0D1117),
-                        Color(0xFF111827),
-                        DeepBase
-                    )
+                    listOf(Color(0xFF0D1117), Color(0xFF111827), DeepBase)
                 )
             )
     ) {
@@ -118,15 +132,10 @@ fun MapScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 116.dp)
         ) {
-            item {
-                MapHeader()
-            }
+            item { MapHeader() }
 
             item {
-                SearchField(
-                    query = query,
-                    onQueryChange = { query = it }
-                )
+                SearchField(query = query, onQueryChange = { query = it })
             }
 
             item {
@@ -148,18 +157,39 @@ fun MapScreen(
                 )
             }
 
-            items(filteredPins) { pin ->
-                MapGemCard(pin = pin, onClick = { onPinClick(pin) })
-            }
-
-            if (filteredPins.isEmpty()) {
-                item {
-                    EmptyMapState(query = query, category = selectedCategory)
+            // ✅ Loading state
+            when (pinsState) {
+                is PinsState.Loading -> item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Primary)
+                    }
+                }
+                is PinsState.Error -> item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Failed to load gems 😕",
+                            style = TextStyle(color = MutedText, fontSize = 14.sp)
+                        )
+                    }
+                }
+                is PinsState.Success -> {
+                    items(filteredPins) { pin ->
+                        MapGemCard(pin = pin, onClick = { onPinClick(pin) })
+                    }
+                    if (filteredPins.isEmpty()) {
+                        item {
+                            EmptyMapState(query = query, category = selectedCategory)
+                        }
+                    }
                 }
             }
         }
-
-
     }
 }
 
@@ -195,33 +225,19 @@ private fun MapHeader() {
 }
 
 @Composable
-private fun SearchField(
-    query: String,
-    onQueryChange: (String) -> Unit
-) {
+private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         placeholder = {
             Text(
                 text = "Search hidden gems or provinces",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 14.sp,
-                    color = MutedText
-                )
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = MutedText)
             )
         },
         leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = Primary,
-                modifier = Modifier.size(19.dp)
-            )
+            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = Primary, modifier = Modifier.size(19.dp))
         },
         singleLine = true,
         shape = RoundedCornerShape(20.dp),
@@ -244,9 +260,7 @@ private fun CategoryRow(
     onCategorySelected: (String) -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
+        modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         categories.forEach { category ->
@@ -285,11 +299,7 @@ private fun MapPreview(pinCount: Int) {
             .clip(RoundedCornerShape(28.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(
-                        Color(0xFF111827),
-                        Color(0xFF1A202C),
-                        Color(0xFF0D1117)
-                    )
+                    listOf(Color(0xFF111827), Color(0xFF1A202C), Color(0xFF0D1117))
                 )
             )
             .border(1.dp, Outline, RoundedCornerShape(28.dp))
@@ -317,19 +327,12 @@ private fun MapPreview(pinCount: Int) {
                     .border(1.dp, Primary.copy(alpha = 0.60f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(22.dp)
-                )
+                Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = Primary, modifier = Modifier.size(22.dp))
             }
         }
 
         Surface(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(14.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp),
             shape = RoundedCornerShape(999.dp),
             color = SurfaceGlass,
             border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.55f))
@@ -339,20 +342,10 @@ private fun MapPreview(pinCount: Int) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.MyLocation,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Icon(imageVector = Icons.Default.MyLocation, contentDescription = null, tint = Primary, modifier = Modifier.size(16.dp))
                 Text(
                     text = "$pinCount map-ready gems",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Primary
-                    )
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary)
                 )
             }
         }
@@ -361,28 +354,9 @@ private fun MapPreview(pinCount: Int) {
 
 @Composable
 private fun SectionTitle(title: String, subtitle: String) {
-    Column(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Black,
-                color = InkText
-            )
-        )
-        Text(
-            text = subtitle,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.sp,
-                lineHeight = 19.sp,
-                color = MutedText
-            )
-        )
+    Column(modifier = Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(text = title, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 24.sp, fontWeight = FontWeight.Black, color = InkText))
+        Text(text = subtitle, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, lineHeight = 19.sp, color = MutedText))
     }
 }
 
@@ -401,70 +375,26 @@ private fun MapGemCard(pin: PinCard, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = pin.imageUrl,
+            model = pin.imageUrl.ifBlank { null },
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(82.dp)
-                .clip(RoundedCornerShape(18.dp))
+            modifier = Modifier.size(82.dp).clip(RoundedCornerShape(18.dp))
         )
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    text = pin.province,
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Primary
-                    )
-                )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = Primary, modifier = Modifier.size(14.dp))
+                Text(text = pin.province, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary))
             }
-
             Text(
                 text = pin.title,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 18.sp,
-                    lineHeight = 21.sp,
-                    fontWeight = FontWeight.Black,
-                    color = InkText
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 18.sp, lineHeight = 21.sp, fontWeight = FontWeight.Black, color = InkText),
+                maxLines = 2, overflow = TextOverflow.Ellipsis
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(15.dp)
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Default.KeyboardArrowUp, contentDescription = null, tint = Primary, modifier = Modifier.size(15.dp))
                 Text(
                     text = "${pin.votes} saves | ${pin.category}",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MutedText
-                    )
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MutedText)
                 )
             }
         }
@@ -474,35 +404,12 @@ private fun MapGemCard(pin: PinCard, onClick: () -> Unit) {
 @Composable
 private fun EmptyMapState(query: String, category: String) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 36.dp, vertical = 34.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 36.dp, vertical = 34.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Map,
-            contentDescription = null,
-            tint = Primary,
-            modifier = Modifier.size(34.dp)
-        )
-        Text(
-            text = "No gems found",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                color = InkText
-            )
-        )
-        Text(
-            text = "Try another province, category, or search term.",
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.sp,
-                lineHeight = 19.sp,
-                color = MutedText
-            )
-        )
+        Icon(imageVector = Icons.Default.Map, contentDescription = null, tint = Primary, modifier = Modifier.size(34.dp))
+        Text(text = "No gems found", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 18.sp, fontWeight = FontWeight.Black, color = InkText))
+        Text(text = "Try another province, category, or search term.", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, lineHeight = 19.sp, color = MutedText))
     }
 }
