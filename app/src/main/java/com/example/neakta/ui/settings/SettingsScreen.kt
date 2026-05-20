@@ -61,6 +61,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.neakta.ui.auth.Cinzel
+import com.example.neakta.ui.core.AppLanguage
+import com.example.neakta.ui.core.LocalAppLanguage
 
 private val InkText = Color(0xFFF7FAFC)
 private val MutedText = Color(0xFFB8C2CC)
@@ -73,31 +75,39 @@ private val Danger = Color(0xFFFF6B6B)
 
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
-    var language by remember { mutableStateOf("English") }
+    // Read the app-wide language state
+    val languageState = LocalAppLanguage.current
+    val isKhmer = languageState.current == AppLanguage.KHMER
+
+    // Local UI state
     var theme by remember { mutableStateOf("Dark") }
     var notificationsEnabled by remember { mutableStateOf(true) }
     var profilePublic by remember { mutableStateOf(true) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
+    // — Language dialog
     if (showLanguageDialog) {
         ChoiceDialog(
-            title = "Choose Language",
-            options = listOf("English", "ភាសាខ្មែរ"),
-            selectedOption = language,
-            onOptionSelected = {
-                language = it
+            title = if (isKhmer) "ជ្រើសភាសា" else "Choose Language",
+            options = listOf(AppLanguage.ENGLISH.displayName, AppLanguage.KHMER.displayName),
+            selectedOption = languageState.current.displayName,
+            onOptionSelected = { selected ->
+                languageState.current = AppLanguage.entries.first { it.displayName == selected }
                 showLanguageDialog = false
             },
             onDismiss = { showLanguageDialog = false }
         )
     }
 
+    // — Theme dialog
     if (showThemeDialog) {
         ChoiceDialog(
-            title = "Choose Theme",
+            title = if (isKhmer) "ជ្រើសរចនាប័ទ្ម" else "Choose Theme",
             options = listOf("Dark", "Light", "System Default"),
             selectedOption = theme,
             onOptionSelected = {
@@ -105,6 +115,64 @@ fun SettingsScreen(
                 showThemeDialog = false
             },
             onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    // — Logout confirmation dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            containerColor = Color(0xFF111827),
+            titleContentColor = InkText,
+            title = {
+                Text(
+                    text = if (isKhmer) "ចាកចេញ?" else "Log Out?",
+                    style = TextStyle(
+                        fontFamily = Cinzel,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = InkText
+                    )
+                )
+            },
+            text = {
+                Text(
+                    text = if (isKhmer) "តើអ្នកប្រាកដថាចង់ចាកចេញពីឧបករណ៍នេះទេ?"
+                    else "Are you sure you want to sign out from this device?",
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 13.sp,
+                        color = MutedText
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    onLogout()
+                }) {
+                    Text(
+                        text = if (isKhmer) "ចាកចេញ" else "Log Out",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            color = Danger
+                        )
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(
+                        text = if (isKhmer) "បោះបង់" else "Cancel",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                    )
+                }
+            }
         )
     }
 
@@ -137,30 +205,30 @@ fun SettingsScreen(
             contentPadding = PaddingValues(bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            item {
-                SettingsHeader(onBack = onBack)
-            }
+            item { SettingsHeader(onBack = onBack, isKhmer = isKhmer) }
 
             item {
-                SettingsSection(title = "Preferences") {
+                SettingsSection(title = if (isKhmer) "ចំណូលចិត្ត" else "Preferences") {
                     SettingRow(
                         icon = Icons.Default.Language,
-                        title = "Language",
-                        subtitle = "Change app text between English and Khmer",
-                        value = language,
+                        title = if (isKhmer) "ភាសា" else "Language",
+                        subtitle = if (isKhmer) "ប្តូររវាងភាសាអង់គ្លេស និងខ្មែរ"
+                        else "Change app text between English and Khmer",
+                        value = languageState.current.displayName,
                         onClick = { showLanguageDialog = true }
                     )
                     SettingRow(
                         icon = Icons.Default.DarkMode,
-                        title = "Theme",
-                        subtitle = "Choose how NeakTa looks",
+                        title = if (isKhmer) "រចនាប័ទ្ម" else "Theme",
+                        subtitle = if (isKhmer) "ជ្រើសរូបរាង NeakTa" else "Choose how NeakTa looks",
                         value = theme,
                         onClick = { showThemeDialog = true }
                     )
                     SwitchRow(
                         icon = Icons.Default.Notifications,
-                        title = "Notifications",
-                        subtitle = "Receive updates about saved gems",
+                        title = if (isKhmer) "ការជូនដំណឹង" else "Notifications",
+                        subtitle = if (isKhmer) "ទទួលការអាប់ដេតអំពី gems ដែលបានរក្សាទុក"
+                        else "Receive updates about saved gems",
                         checked = notificationsEnabled,
                         onCheckedChange = { notificationsEnabled = it }
                     )
@@ -168,45 +236,49 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "Account") {
+                SettingsSection(title = if (isKhmer) "គណនី" else "Account") {
                     SettingRow(
                         icon = Icons.Default.Edit,
-                        title = "Edit Profile",
-                        subtitle = "Update your name, province, and photo",
+                        title = if (isKhmer) "កែប្រែប្រវត្តិរូប" else "Edit Profile",
+                        subtitle = if (isKhmer) "ធ្វើបច្ចុប្បន្នភាពឈ្មោះ ខេត្ត និងរូបថត"
+                        else "Update your name, province, and photo",
                         value = "",
                         onClick = {}
                     )
                     SwitchRow(
                         icon = Icons.Default.Lock,
-                        title = "Public Profile",
-                        subtitle = "Let other users see your gems and rank",
+                        title = if (isKhmer) "ប្រវត្តិរូបសាធារណៈ" else "Public Profile",
+                        subtitle = if (isKhmer) "អនុញ្ញាតឱ្យអ្នកប្រើប្រាស់ផ្សេងទៀតមើល gems និងចំណាត់ថ្នាក់របស់អ្នក"
+                        else "Let other users see your gems and rank",
                         checked = profilePublic,
                         onCheckedChange = { profilePublic = it }
                     )
                     SettingRow(
                         icon = Icons.Default.Logout,
-                        title = "Logout",
-                        subtitle = "Sign out from this device",
+                        title = if (isKhmer) "ចាកចេញ" else "Logout",
+                        subtitle = if (isKhmer) "ចាកចេញពីឧបករណ៍នេះ" else "Sign out from this device",
                         value = "",
                         danger = true,
-                        onClick = {}
+                        onClick = { showLogoutDialog = true }
                     )
                 }
             }
 
             item {
-                SettingsSection(title = "Support") {
+                SettingsSection(title = if (isKhmer) "ជំនួយ" else "Support") {
                     SettingRow(
                         icon = Icons.Default.Info,
-                        title = "About NeakTa",
-                        subtitle = "App version, project info, and purpose",
+                        title = if (isKhmer) "អំពី NeakTa" else "About NeakTa",
+                        subtitle = if (isKhmer) "កំណែ ព័ត៌មានគម្រោង និងគោលបំណង"
+                        else "App version, project info, and purpose",
                         value = "1.0",
                         onClick = {}
                     )
                     SettingRow(
                         icon = Icons.Default.Help,
-                        title = "Help",
-                        subtitle = "Get support or learn how to use the app",
+                        title = if (isKhmer) "ជំនួយ" else "Help",
+                        subtitle = if (isKhmer) "ទទួលការគាំទ្រ ឬស្វែងយល់ពីរបៀបប្រើកម្មវិធី"
+                        else "Get support or learn how to use the app",
                         value = "",
                         onClick = {}
                     )
@@ -214,16 +286,14 @@ fun SettingsScreen(
             }
 
             item {
-                Spacer(
-                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
-                )
+                Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
     }
 }
 
 @Composable
-private fun SettingsHeader(onBack: () -> Unit) {
+private fun SettingsHeader(onBack: () -> Unit, isKhmer: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -237,10 +307,7 @@ private fun SettingsHeader(onBack: () -> Unit) {
             color = GlassPanel,
             border = androidx.compose.foundation.BorderStroke(1.dp, Outline)
         ) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.size(44.dp)
-            ) {
+            IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
@@ -252,7 +319,7 @@ private fun SettingsHeader(onBack: () -> Unit) {
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "SETTINGS",
+                text = if (isKhmer) "ការកំណត់" else "SETTINGS",
                 style = TextStyle(
                     fontFamily = Cinzel,
                     fontSize = 24.sp,
@@ -261,7 +328,8 @@ private fun SettingsHeader(onBack: () -> Unit) {
                 )
             )
             Text(
-                text = "Customize your NeakTa experience",
+                text = if (isKhmer) "កំណត់បទពិសោធន៍ NeakTa របស់អ្នក"
+                else "Customize your NeakTa experience",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 13.sp,
@@ -272,6 +340,8 @@ private fun SettingsHeader(onBack: () -> Unit) {
         }
     }
 }
+
+// — Everything below is unchanged from your original —
 
 @Composable
 private fun SettingsSection(
@@ -291,7 +361,6 @@ private fun SettingsSection(
                 color = Primary
             )
         )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -322,12 +391,7 @@ private fun SettingRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         SettingsIcon(icon = icon, danger = danger)
-        SettingsText(
-            title = title,
-            subtitle = subtitle,
-            danger = danger,
-            modifier = Modifier.weight(1f)
-        )
+        SettingsText(title = title, subtitle = subtitle, danger = danger, modifier = Modifier.weight(1f))
         if (value.isNotBlank()) {
             Text(
                 text = value,
@@ -367,11 +431,7 @@ private fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         SettingsIcon(icon = icon)
-        SettingsText(
-            title = title,
-            subtitle = subtitle,
-            modifier = Modifier.weight(1f)
-        )
+        SettingsText(title = title, subtitle = subtitle, modifier = Modifier.weight(1f))
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -415,10 +475,7 @@ private fun SettingsText(
     danger: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = title,
             style = TextStyle(

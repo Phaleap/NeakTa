@@ -4,7 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import com.example.neakta.navigation.NeaktaNavGraph
+import com.example.neakta.ui.core.LanguageState
+import com.example.neakta.ui.core.LocalAppLanguage
 import com.example.neakta.ui.theme.NeakTaTheme
 
 class MainActivity : ComponentActivity() {
@@ -12,8 +16,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            NeakTaTheme {
-                NeaktaNavGraph()
+            val languageState = remember { LanguageState() }
+            CompositionLocalProvider(LocalAppLanguage provides languageState) {
+                NeakTaTheme {
+                    NeaktaNavGraph()
+                }
             }
         }
     }
