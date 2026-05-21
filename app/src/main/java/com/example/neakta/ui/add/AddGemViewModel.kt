@@ -9,6 +9,9 @@ import com.example.neakta.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.math.BigDecimal
 
 sealed class AddGemState {
@@ -30,7 +33,9 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
         provinceName: String,
         categoryName: String,
         lat: Double,
-        lng: Double
+        lng: Double,
+        photoUris: List<android.net.Uri>,
+        context: android.content.Context
     ) {
         viewModelScope.launch {
             _state.value = AddGemState.Loading
@@ -54,17 +59,50 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
                 )
 
                 val token = "Bearer ${session.getToken()}"
-                val response = RetrofitClient.instance.createPin(token, request)
 
-                if (response.isSuccessful) {
-                    _state.value = AddGemState.Success
-                } else {
+                // Step 1: create the pin
+                val response = RetrofitClient.instance.createPin(token, request)
+                if (!response.isSuccessful) {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
                     _state.value = AddGemState.Error("Failed: $errorBody")
+                    return@launch
                 }
+
+                val createdPin = response.body()!!
+
+                // Step 2: upload photos if any
+                for (uri in photoUris) {
+                    try {
+                        val part = uriToMultipart(context, uri)
+                        if (part != null) {
+                            RetrofitClient.instance.uploadPinPhoto(token, createdPin.id, part)
+                        }
+                    } catch (e: Exception) {
+                        // Don't fail the whole submission if a photo upload fails
+                        android.util.Log.e("AddGemVM", "Photo upload failed: ${e.message}")
+                    }
+                }
+
+                _state.value = AddGemState.Success
+
             } catch (e: Exception) {
                 _state.value = AddGemState.Error(e.message ?: "Network error")
             }
+        }
+    }
+
+    private fun uriToMultipart(
+        context: android.content.Context,
+        uri: android.net.Uri
+    ): MultipartBody.Part? {
+        return try {
+            val stream = context.contentResolver.openInputStream(uri) ?: return null
+            val bytes = stream.readBytes()
+            stream.close()
+            val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("file", "photo_${System.currentTimeMillis()}.jpg", requestBody)
+        } catch (e: Exception) {
+            null
         }
     }
 

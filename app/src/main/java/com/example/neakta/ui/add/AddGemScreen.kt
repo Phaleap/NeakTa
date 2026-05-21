@@ -148,8 +148,10 @@ fun AddGemScreen(
             address      = localDirections.ifBlank { selectedProvince },
             provinceName = selectedProvince,
             categoryName = selectedCategory,
-            lat          = 11.5564,   // TODO: replace with real GPS
-            lng          = 104.9282
+            lat          = 11.5564,
+            lng          = 104.9282,
+            photoUris    = photoUris,   // ✅ pass selected photos
+            context      = context      // ✅ pass context for URI reading
         )
     }
 

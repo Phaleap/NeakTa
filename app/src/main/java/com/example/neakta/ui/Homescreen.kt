@@ -119,7 +119,7 @@ fun HomeScreen(
                 category = pin.categoryName ?: "",
                 votes = pin.upvoteCount,
                 story = pin.story,
-                imageUrl = "", // no image URL from backend yet
+                imageUrl = pin.imageUrl ?: "", // no image URL from backend yet
                 author = pin.authorUsername ?: "",
                 timeAgo = pin.createdAt?.take(10) ?: "",
                 lat = pin.lat?.toDouble() ?: 11.5564,

@@ -19,4 +19,5 @@ data class PinResponse(
     val categoryName: String?,
     val categoryIcon: String?,
     val categoryColor: String?,
+    val imageUrl: String?
 )

@@ -64,7 +64,7 @@ fun RanksScreen(
                 category = pin.categoryName ?: "",
                 votes = pin.upvoteCount,
                 story = pin.story,
-                imageUrl = "",
+                imageUrl = pin.imageUrl ?: "",
                 author = pin.authorUsername ?: "",
                 timeAgo = pin.createdAt?.take(10) ?: "",
                 lat = pin.lat?.toDouble() ?: 11.5564,

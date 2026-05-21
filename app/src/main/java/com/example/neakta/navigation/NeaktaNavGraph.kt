@@ -173,7 +173,7 @@ fun NeaktaNavGraph() {
                             category = p.categoryName ?: "",
                             votes    = p.upvoteCount,
                             story    = p.story,
-                            imageUrl = "",
+                            imageUrl = p.imageUrl ?: "",
                             author   = p.authorUsername ?: "",
                             timeAgo  = p.createdAt?.take(10) ?: "",
                             lat      = p.lat?.toDouble() ?: 11.5564,
