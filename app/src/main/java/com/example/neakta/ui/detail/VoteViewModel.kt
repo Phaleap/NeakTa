@@ -17,6 +17,9 @@ class VoteViewModel(private val session: SessionManager) : ViewModel() {
     private val _hasVoted = MutableStateFlow(false)
     val hasVoted: StateFlow<Boolean> = _hasVoted
 
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved
+
     fun init(initialVotes: Int) {
         _voteCount.value = initialVotes
     }
@@ -38,6 +41,42 @@ class VoteViewModel(private val session: SessionManager) : ViewModel() {
                 }
             } catch (e: Exception) {
                 android.util.Log.e("VoteVM", "Vote failed: ${e.message}")
+            }
+        }
+    }
+
+    fun flagPin(pinId: String) {
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${session.getToken()}"
+                RetrofitClient.instance.vote(token, pinId, "FLAG")
+            } catch (e: Exception) {
+                android.util.Log.e("VoteVM", "Flag failed: ${e.message}")
+            }
+        }
+    }
+
+    fun confirmExists(pinId: String) {
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${session.getToken()}"
+                RetrofitClient.instance.vote(token, pinId, "CONFIRM_EXISTS")
+            } catch (e: Exception) {
+                android.util.Log.e("VoteVM", "Confirm exists failed: ${e.message}")
+            }
+        }
+    }
+
+    fun toggleSaved(pinId: String) {
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${session.getToken()}"
+                val response = RetrofitClient.instance.toggleSavedPin(token, pinId)
+                if (response.isSuccessful) {
+                    _isSaved.value = response.body()?.get("message") == "Pin saved"
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VoteVM", "Save failed: ${e.message}")
             }
         }
     }

@@ -43,12 +43,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.core.AppLanguage
@@ -56,6 +58,11 @@ import com.example.neakta.ui.core.LocalAppLanguage
 import com.example.neakta.ui.home.PinCard
 import com.example.neakta.ui.home.PinViewModel
 import com.example.neakta.ui.home.PinsState
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 private val InkText      = Color(0xFFF7FAFC)
 private val MutedText    = Color(0xFFB8C2CC)
@@ -147,7 +154,13 @@ fun MapScreen(
                 )
             }
 
-            item { MapPreview(pinCount = filteredPins.size, isKhmer = isKhmer) }
+            item {
+                RealMapPreview(
+                    pins = filteredPins,
+                    onPinClick = onPinClick,
+                    isKhmer = isKhmer
+                )
+            }
 
             item {
                 SectionTitle(
@@ -179,6 +192,79 @@ fun MapScreen(
                         item { EmptyMapState(query = query, category = selectedCategory, isKhmer = isKhmer) }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RealMapPreview(
+    pins: List<PinCard>,
+    onPinClick: (PinCard) -> Unit,
+    isKhmer: Boolean
+) {
+    val context = LocalContext.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .height(240.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(SurfaceStrong)
+            .border(1.dp, Outline, RoundedCornerShape(28.dp))
+    ) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = {
+                Configuration.getInstance().userAgentValue = context.packageName
+                MapView(context).apply {
+                    setTileSource(TileSourceFactory.MAPNIK)
+                    setMultiTouchControls(true)
+                    controller.setZoom(7.0)
+                    controller.setCenter(GeoPoint(12.5657, 104.9910))
+                }
+            },
+            update = { mapView ->
+                mapView.overlays.removeAll { it is Marker }
+
+                pins.forEach { pin ->
+                    val marker = Marker(mapView).apply {
+                        position = GeoPoint(pin.lat, pin.lng)
+                        title = pin.title
+                        subDescription = "${pin.province} | ${pin.category}"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        setOnMarkerClickListener { _, _ ->
+                            onPinClick(pin)
+                            true
+                        }
+                    }
+                    mapView.overlays.add(marker)
+                }
+
+                pins.firstOrNull()?.let { first ->
+                    mapView.controller.setCenter(GeoPoint(first.lat, first.lng))
+                }
+                mapView.invalidate()
+            }
+        )
+
+        Surface(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp),
+            shape = RoundedCornerShape(999.dp),
+            color = SurfaceGlass,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.55f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Icon(Icons.Default.MyLocation, null, tint = Primary, modifier = Modifier.size(16.dp))
+                Text(
+                    text = if (isKhmer) "${pins.size} gems លើផែនទី" else "${pins.size} gems on map",
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary)
+                )
             }
         }
     }

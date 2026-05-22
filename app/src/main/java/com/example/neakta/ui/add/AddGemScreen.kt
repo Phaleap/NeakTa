@@ -1,7 +1,10 @@
 package com.example.neakta.ui.add
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -102,6 +105,8 @@ fun AddGemScreen(
     var photoUris                by remember { mutableStateOf(listOf<Uri>()) }
     var provinceDropdownExpanded by remember { mutableStateOf(false) }
     var currentStep              by remember { mutableIntStateOf(0) }
+    var selectedLat              by remember { mutableStateOf(11.5564) }
+    var selectedLng              by remember { mutableStateOf(104.9282) }
 
     // ── Validation ────────────────────────────────────────────
     val isStep1Valid = gemName.isNotBlank() && selectedCategory.isNotEmpty() && selectedProvince.isNotEmpty()
@@ -119,7 +124,12 @@ fun AddGemScreen(
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        // TODO: Use FusedLocationProviderClient here to get real GPS coords
+        if (granted) {
+            getBestLastKnownLocation(context)?.let { location ->
+                selectedLat = location.latitude
+                selectedLng = location.longitude
+            }
+        }
     }
 
     // ── Snackbar for errors ───────────────────────────────────
@@ -148,8 +158,8 @@ fun AddGemScreen(
             address      = localDirections.ifBlank { selectedProvince },
             provinceName = selectedProvince,
             categoryName = selectedCategory,
-            lat          = 11.5564,
-            lng          = 104.9282,
+            lat          = selectedLat,
+            lng          = selectedLng,
             photoUris    = photoUris,   // ✅ pass selected photos
             context      = context      // ✅ pass context for URI reading
         )
@@ -464,7 +474,10 @@ fun AddGemScreen(
                                 modifier = Modifier.clickable {
                                     val perm = Manifest.permission.ACCESS_FINE_LOCATION
                                     if (ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED) {
-                                        // TODO: call FusedLocationProviderClient
+                                        getBestLastKnownLocation(context)?.let { location ->
+                                            selectedLat = location.latitude
+                                            selectedLng = location.longitude
+                                        }
                                     } else {
                                         locationPermissionLauncher.launch(perm)
                                     }
@@ -787,5 +800,29 @@ private fun GemPublishedSuccess(gemName: String, onDone: () -> Unit) {
                 Text("Back to Home", style = TextStyle(fontFamily = Cinzel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0A1020), letterSpacing = 0.5.sp))
             }
         }
+    }
+}
+
+private fun getBestLastKnownLocation(context: Context): Location? {
+    val fineGranted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    val coarseGranted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!fineGranted && !coarseGranted) return null
+
+    return try {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .mapNotNull { provider ->
+                runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+            }
+            .maxByOrNull { it.time }
+    } catch (e: Exception) {
+        null
     }
 }

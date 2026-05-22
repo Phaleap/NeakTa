@@ -3,8 +3,10 @@ package com.example.neakta.ui.add
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.neakta.model.CategoryResponse
 import com.example.neakta.data.SessionManager
 import com.example.neakta.model.PinRequest
+import com.example.neakta.model.ProvinceResponse
 import com.example.neakta.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,35 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
 
     private val _state = MutableStateFlow<AddGemState>(AddGemState.Idle)
     val state: StateFlow<AddGemState> = _state
+
+    private val _provinces = MutableStateFlow<List<ProvinceResponse>>(emptyList())
+    val provinces: StateFlow<List<ProvinceResponse>> = _provinces
+
+    private val _categories = MutableStateFlow<List<CategoryResponse>>(emptyList())
+    val categories: StateFlow<List<CategoryResponse>> = _categories
+
+    init {
+        fetchCatalogs()
+    }
+
+    private fun fetchCatalogs() {
+        viewModelScope.launch {
+            val token = "Bearer ${session.getToken()}"
+            try {
+                val provinceResponse = RetrofitClient.instance.getProvinces(token)
+                if (provinceResponse.isSuccessful) {
+                    _provinces.value = provinceResponse.body().orEmpty()
+                }
+
+                val categoryResponse = RetrofitClient.instance.getCategories(token)
+                if (categoryResponse.isSuccessful) {
+                    _categories.value = categoryResponse.body().orEmpty()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AddGemVM", "Catalog load failed: ${e.message}")
+            }
+        }
+    }
 
     fun submitPin(
         title: String,
@@ -110,19 +141,24 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
         _state.value = AddGemState.Idle
     }
 
-    // TODO: Replace with real /api/provinces endpoint when available.
-    // These IDs assume DB is seeded in alphabetical order (1-indexed).
     private fun resolveProvinceId(name: String): Int? {
-        return cambodianProvinces.indexOfFirst {
-            it.equals(name, ignoreCase = true)
-        }.takeIf { it >= 0 }?.plus(1)
+        _provinces.value.firstOrNull {
+            it.nameEn.equals(name, ignoreCase = true) || it.nameKm == name
+        }?.let { return it.id }
+
+        return cambodianProvinces.indexOfFirst { it.equals(name, ignoreCase = true) }
+            .takeIf { it >= 0 }
+            ?.plus(1)
     }
 
-    // TODO: Replace with real /api/categories endpoint when available.
     private fun resolveCategoryId(name: String): Int? {
-        return gemCategories.indexOfFirst {
-            it.equals(name, ignoreCase = true)
-        }.takeIf { it >= 0 }?.plus(1)
+        _categories.value.firstOrNull {
+            it.nameEn.equals(name, ignoreCase = true) || it.nameKh == name
+        }?.let { return it.id }
+
+        return gemCategories.indexOfFirst { it.equals(name, ignoreCase = true) }
+            .takeIf { it >= 0 }
+            ?.plus(1)
     }
 
     class Factory(private val session: SessionManager) : ViewModelProvider.Factory {

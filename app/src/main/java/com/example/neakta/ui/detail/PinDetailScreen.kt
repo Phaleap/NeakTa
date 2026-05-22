@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -104,6 +105,7 @@ fun PinDetailScreen(
 
     val localVotes by voteViewModel.voteCount.collectAsState()
     val foundPressed by voteViewModel.hasVoted.collectAsState()
+    val isSaved by voteViewModel.isSaved.collectAsState()
 
     Box(
         modifier = Modifier
@@ -142,7 +144,9 @@ fun PinDetailScreen(
         ) {
             HeroSection(
                 pin = pin,
-                onBack = onBack
+                onBack = onBack,
+                isSaved = isSaved,
+                onSaveClick = { voteViewModel.toggleSaved(pin.id) }
             )
 
             Column(
@@ -202,7 +206,7 @@ fun PinDetailScreen(
                 )
 
                 TextButton(
-                    onClick = { },
+                    onClick = { voteViewModel.flagPin(pin.id) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
@@ -240,7 +244,9 @@ fun PinDetailScreen(
 @Composable
 private fun HeroSection(
     pin: PinCard,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit
 ) {
     val mediaUrls = pin.mediaUrls.ifEmpty { listOf(pin.imageUrl) }
     val pagerState = rememberPagerState(pageCount = { mediaUrls.size })
@@ -292,9 +298,9 @@ private fun HeroSection(
             )
 
             GlassIconButton(
-                icon = Icons.Default.BookmarkBorder,
+                icon = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                 contentDescription = "Save",
-                onClick = { }
+                onClick = onSaveClick
             )
         }
 
