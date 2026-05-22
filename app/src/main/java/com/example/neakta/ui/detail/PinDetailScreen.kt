@@ -1,5 +1,7 @@
 package com.example.neakta.ui.detail
 
+import com.example.neakta.data.SessionManager
+import androidx.compose.runtime.collectAsState
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -47,9 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -84,17 +83,27 @@ private val CardEnd = Color(0xCC111827)
 private val SoftOutline = Color(0x26FFFFFF)
 private val GlassPanel = Color(0x991A202C)
 
+// AFTER
 @Composable
 fun PinDetailScreen(
     pin: PinCard,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    voteViewModel: VoteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+        factory = VoteViewModel.Factory(SessionManager(LocalContext.current))
+    )
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val pageScroll = rememberScrollState()
     val tagScroll = rememberScrollState()
-    var foundPressed by remember { mutableStateOf(false) }
-    var localVotes by remember { mutableIntStateOf(pin.votes) }
+
+    // ✅ Init vote count from pin
+    androidx.compose.runtime.LaunchedEffect(pin.id) {
+        voteViewModel.init(pin.votes)
+    }
+
+    val localVotes by voteViewModel.voteCount.collectAsState()
+    val foundPressed by voteViewModel.hasVoted.collectAsState()
 
     Box(
         modifier = Modifier
@@ -216,14 +225,12 @@ fun PinDetailScreen(
             }
         }
 
+        // AFTER
         BottomFoundBar(
             foundPressed = foundPressed,
             localVotes = localVotes,
             onFoundClick = {
-                if (!foundPressed) {
-                    foundPressed = true
-                    localVotes += 1
-                }
+                voteViewModel.toggleVote(pin.id)
             },
             modifier = Modifier.align(Alignment.BottomCenter)
         )

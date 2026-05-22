@@ -33,6 +33,8 @@ import com.example.neakta.data.SessionManager
 import com.example.neakta.model.PinResponse
 import com.example.neakta.model.UserResponse
 import com.example.neakta.ui.auth.Cinzel
+import com.example.neakta.ui.core.AppLanguage
+import com.example.neakta.ui.core.LocalAppLanguage
 
 private val InkText    = Color(0xFFF7FAFC)
 private val MutedText  = Color(0xFFB8C2CC)
@@ -51,6 +53,8 @@ fun ProfileScreen(
     )
 ) {
     val state by viewModel.state.collectAsState()
+    val languageState = LocalAppLanguage.current
+    val isKhmer = languageState.current == AppLanguage.KHMER
 
     Box(
         modifier = Modifier
@@ -61,7 +65,6 @@ fun ProfileScreen(
                 )
             )
     ) {
-        // Background glow
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,7 +77,7 @@ fun ProfileScreen(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            ProfileTopBar(onNavigateToSettings = onNavigateToSettings)
+            ProfileTopBar(onNavigateToSettings = onNavigateToSettings, isKhmer = isKhmer)
 
             when (state) {
                 is ProfileState.Loading -> {
@@ -91,7 +94,7 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(onClick = { viewModel.fetchProfile() }) {
-                                Text("Retry")
+                                Text(if (isKhmer) "ព្យាយាមម្ដងទៀត" else "Retry")
                             }
                         }
                     }
@@ -99,17 +102,17 @@ fun ProfileScreen(
                 is ProfileState.Success -> {
                     val data = state as ProfileState.Success
                     LazyColumn(
-                        modifier          = Modifier.weight(1f),
-                        contentPadding    = PaddingValues(bottom = 18.dp),
+                        modifier            = Modifier.weight(1f),
+                        contentPadding      = PaddingValues(bottom = 18.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        item { ProfileSummaryCard(user = data.user) }
-                        item { ProfileStatsRow(user = data.user) }
-                        item { MyGemsHeader(count = data.pins.size) }
+                        item { ProfileSummaryCard(user = data.user, isKhmer = isKhmer) }
+                        item { ProfileStatsRow(user = data.user, isKhmer = isKhmer) }
+                        item { MyGemsHeader(count = data.pins.size, isKhmer = isKhmer) }
                         if (data.pins.isEmpty()) {
-                            item { EmptyGemsState() }
+                            item { EmptyGemsState(isKhmer = isKhmer) }
                         } else {
-                            items(data.pins) { pin -> GemRow(pin = pin) }
+                            items(data.pins) { pin -> GemRow(pin = pin, isKhmer = isKhmer) }
                         }
                         item {
                             Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -122,7 +125,7 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileTopBar(onNavigateToSettings: () -> Unit) {
+private fun ProfileTopBar(onNavigateToSettings: () -> Unit, isKhmer: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -133,11 +136,12 @@ private fun ProfileTopBar(onNavigateToSettings: () -> Unit) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text  = "PROFILE",
+                text  = if (isKhmer) "ប្រវត្តិរូប" else "PROFILE",
                 style = TextStyle(fontFamily = Cinzel, fontSize = 24.sp, letterSpacing = 5.sp, color = InkText)
             )
             Text(
-                text  = "Your saved gems and reputation",
+                text  = if (isKhmer) "Gems និងកេរ្តិ៍ឈ្មោះដែលបានរក្សាទុករបស់អ្នក"
+                else "Your saved gems and reputation",
                 style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MutedText)
             )
         }
@@ -150,7 +154,7 @@ private fun ProfileTopBar(onNavigateToSettings: () -> Unit) {
 }
 
 @Composable
-private fun ProfileSummaryCard(user: UserResponse) {
+private fun ProfileSummaryCard(user: UserResponse, isKhmer: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -163,15 +167,14 @@ private fun ProfileSummaryCard(user: UserResponse) {
         verticalAlignment     = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model            = user.avatarUrl,
+            model              = user.avatarUrl,
             contentDescription = null,
-            contentScale     = ContentScale.Crop,
-            modifier         = Modifier.size(72.dp).clip(CircleShape).border(1.dp, Primary, CircleShape)
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier.size(72.dp).clip(CircleShape).border(1.dp, Primary, CircleShape)
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    // display_name if set, otherwise fall back to username
                     text  = user.displayName?.takeIf { it.isNotBlank() } ?: user.username,
                     style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = InkText)
                 )
@@ -180,18 +183,17 @@ private fun ProfileSummaryCard(user: UserResponse) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Default.LocationOn, null, tint = Primary, modifier = Modifier.size(13.dp))
                 Text(
-                    text  = "@${user.username}",
-                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, color = MutedText),
+                    text     = "@${user.username}",
+                    style    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, color = MutedText),
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
-            // Level badge based on total_pins
             val level = when {
-                user.totalPins >= 20 -> "Gem Master Lv.5"
-                user.totalPins >= 10 -> "Gem Hunter Lv.4"
-                user.totalPins >= 5  -> "Explorer Lv.3"
-                user.totalPins >= 2  -> "Scout Lv.2"
-                else                 -> "Newcomer Lv.1"
+                user.totalPins >= 20 -> if (isKhmer) "អ្នកជំនាញ Gem កម្រិត ៥" else "Gem Master Lv.5"
+                user.totalPins >= 10 -> if (isKhmer) "អ្នក狩猎 Gem កម្រិត ៤" else "Gem Hunter Lv.4"
+                user.totalPins >= 5  -> if (isKhmer) "អ្នករុករក កម្រិត ៣" else "Explorer Lv.3"
+                user.totalPins >= 2  -> if (isKhmer) "អ្នកស្វែងរក កម្រិត ២" else "Scout Lv.2"
+                else                 -> if (isKhmer) "អ្នកថ្មី កម្រិត ១" else "Newcomer Lv.1"
             }
             Box(
                 modifier = Modifier
@@ -207,7 +209,7 @@ private fun ProfileSummaryCard(user: UserResponse) {
 }
 
 @Composable
-private fun ProfileStatsRow(user: UserResponse) {
+private fun ProfileStatsRow(user: UserResponse, isKhmer: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -217,13 +219,24 @@ private fun ProfileStatsRow(user: UserResponse) {
             .border(1.dp, Outline, RoundedCornerShape(24.dp)),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StatCell(value = user.totalPins.toString(), label = "Gems",   modifier = Modifier.weight(1f))
+        StatCell(
+            value    = user.totalPins.toString(),
+            label    = if (isKhmer) "Gems" else "Gems",
+            modifier = Modifier.weight(1f)
+        )
         VerticalStatDivider()
-        StatCell(value = user.karmaPoints.toString(), label = "Karma", modifier = Modifier.weight(1f))
+        StatCell(
+            value    = user.karmaPoints.toString(),
+            label    = if (isKhmer) "កាម៉ា" else "Karma",
+            modifier = Modifier.weight(1f)
+        )
         VerticalStatDivider()
-        // Member since — just the year from createdAt
         val year = user.createdAt?.take(4) ?: "—"
-        StatCell(value = year, label = "Since", modifier = Modifier.weight(1f))
+        StatCell(
+            value    = year,
+            label    = if (isKhmer) "ចាប់ពី" else "Since",
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -245,32 +258,44 @@ private fun VerticalStatDivider() {
 }
 
 @Composable
-private fun MyGemsHeader(count: Int) {
+private fun MyGemsHeader(count: Int, isKhmer: Boolean) {
     Row(
         modifier              = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically
     ) {
-        Text(text = "My Gems", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 18.sp, fontWeight = FontWeight.Black, color = InkText))
-        Text(text = "$count total", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary))
+        Text(
+            text  = if (isKhmer) "Gems របស់ខ្ញុំ" else "My Gems",
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 18.sp, fontWeight = FontWeight.Black, color = InkText)
+        )
+        Text(
+            text  = if (isKhmer) "សរុប $count" else "$count total",
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary)
+        )
     }
 }
 
 @Composable
-private fun EmptyGemsState() {
+private fun EmptyGemsState(isKhmer: Boolean) {
     Column(
         modifier            = Modifier.fillMaxWidth().padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(text = "💎", fontSize = 32.sp)
-        Text(text = "No gems yet", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = InkText))
-        Text(text = "Drop your first hidden gem!", style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = MutedText))
+        Text(
+            text  = if (isKhmer) "មិនទាន់មាន Gems នៅឡើយ" else "No gems yet",
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = InkText)
+        )
+        Text(
+            text  = if (isKhmer) "ចុះឈ្មោះ Gem លាក់ដំបូងរបស់អ្នក!" else "Drop your first hidden gem!",
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = MutedText)
+        )
     }
 }
 
 @Composable
-private fun GemRow(pin: PinResponse) {
+private fun GemRow(pin: PinResponse, isKhmer: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -282,7 +307,6 @@ private fun GemRow(pin: PinResponse) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment     = Alignment.CenterVertically
     ) {
-        // Placeholder box since imageUrl not available yet
         Box(
             modifier = Modifier
                 .width(88.dp)
@@ -292,10 +316,7 @@ private fun GemRow(pin: PinResponse) {
                 .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text  = pin.categoryIcon ?: "📍",
-                fontSize = 24.sp
-            )
+            Text(text = pin.categoryIcon ?: "📍", fontSize = 24.sp)
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
@@ -304,8 +325,8 @@ private fun GemRow(pin: PinResponse) {
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Text(
-                text  = "${pin.provinceName ?: ""} · ${pin.categoryName ?: ""}",
-                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = MutedText),
+                text     = "${pin.provinceName ?: ""} · ${pin.categoryName ?: ""}",
+                style    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = MutedText),
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Text(

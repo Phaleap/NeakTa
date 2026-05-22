@@ -94,6 +94,7 @@ fun NeaktaNavGraph() {
             composable("login") {
                 LoginScreen(
                     onLoginSuccess = {
+                        pinViewModel.fetchPins()
                         navController.navigate("onboarding") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -106,6 +107,7 @@ fun NeaktaNavGraph() {
             composable("register") {
                 RegisterScreen(
                     onRegisterSuccess = {
+                        pinViewModel.fetchPins()
                         navController.navigate("home") {
                             popUpTo("register") { inclusive = true }
                         }
@@ -156,7 +158,13 @@ fun NeaktaNavGraph() {
 
             composable("settings") {
                 SettingsScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        session.clearSession()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
 

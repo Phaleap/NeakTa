@@ -1,72 +1,41 @@
 package com.example.neakta.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = NeakTaPrimary,
-    secondary = NeakTaPrimary,
-    tertiary = NeakTaPrimary,
-    background = NeakTaBackground,
-    surface = NeakTaSurfaceStrong,
-    onPrimary = NeakTaBackground,
-    onSecondary = NeakTaBackground,
-    onTertiary = NeakTaBackground,
+    primary      = NeakTaPrimary,
+    secondary    = NeakTaPrimary,
+    tertiary     = NeakTaPrimary,
+    background   = NeakTaBackground,
+    surface      = NeakTaSurfaceStrong,
+    onPrimary    = NeakTaBackground,
+    onSecondary  = NeakTaBackground,
+    onTertiary   = NeakTaBackground,
     onBackground = NeakTaTextPrimary,
-    onSurface = NeakTaTextPrimary
+    onSurface    = NeakTaTextPrimary
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = NeakTaPrimary,
-    secondary = NeakTaPrimary,
-    tertiary = NeakTaPrimary,
-    background = NeakTaBackground,
-    surface = NeakTaSurfaceStrong,
-    onPrimary = NeakTaBackground,
-    onSecondary = NeakTaBackground,
-    onTertiary = NeakTaBackground,
-    onBackground = NeakTaTextPrimary,
-    onSurface = NeakTaTextPrimary
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary      = NeakTaPrimaryLight,
+    secondary    = NeakTaPrimaryLight,
+    tertiary     = NeakTaPrimaryLight,
+    background   = NeakTaBackgroundLight,
+    surface      = NeakTaSurfaceStrongLight,
+    onPrimary    = NeakTaBackgroundLight,
+    onSecondary  = NeakTaBackgroundLight,
+    onTertiary   = NeakTaBackgroundLight,
+    onBackground = NeakTaTextPrimaryLight,
+    onSurface    = NeakTaTextPrimaryLight
 )
 
 @Composable
-fun NeakTaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
+fun NeakTaTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = DarkColorScheme,  // always dark
+        typography  = Typography,
+        content     = content
     )
 }

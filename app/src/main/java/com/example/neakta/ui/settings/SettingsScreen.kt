@@ -63,113 +63,88 @@ import androidx.compose.ui.unit.sp
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LocalAppLanguage
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.example.neakta.ui.core.LanguagePreference
+import kotlinx.coroutines.launch
 
-private val InkText = Color(0xFFF7FAFC)
-private val MutedText = Color(0xFFB8C2CC)
-private val NightBase = Color(0xFF0D1117)
-private val CardBg = Color(0xE61A202C)
+private val InkText    = Color(0xFFF7FAFC)
+private val MutedText  = Color(0xFFB8C2CC)
+private val NightBase  = Color(0xFF0D1117)
+private val CardBg     = Color(0xE61A202C)
 private val GlassPanel = Color(0x991A202C)
-private val Outline = Color(0x26FFFFFF)
-private val Primary = Color(0xFF5FD3A6)
-private val Danger = Color(0xFFFF6B6B)
+private val Outline    = Color(0x26FFFFFF)
+private val Primary    = Color(0xFF5FD3A6)
+private val Danger     = Color(0xFFFF6B6B)
 
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
-    // Read the app-wide language state
     val languageState = LocalAppLanguage.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val isKhmer = languageState.current == AppLanguage.KHMER
 
-    // Local UI state
-    var theme by remember { mutableStateOf("Dark") }
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var profilePublic by remember { mutableStateOf(true) }
-    var showLanguageDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // — Language dialog
+    var notificationsEnabled by remember { mutableStateOf(true) }
+    var profilePublic        by remember { mutableStateOf(true) }
+    var showLanguageDialog   by remember { mutableStateOf(false) }
+    var showLogoutDialog     by remember { mutableStateOf(false) }
+
+    // ── Language dialog ───────────────────────────────────────
     if (showLanguageDialog) {
         ChoiceDialog(
             title = if (isKhmer) "ជ្រើសភាសា" else "Choose Language",
             options = listOf(AppLanguage.ENGLISH.displayName, AppLanguage.KHMER.displayName),
             selectedOption = languageState.current.displayName,
             onOptionSelected = { selected ->
-                languageState.current = AppLanguage.entries.first { it.displayName == selected }
+                val newLang = AppLanguage.entries.first { it.displayName == selected }
+                languageState.current = newLang
+                scope.launch {
+                    LanguagePreference.saveLanguage(context, newLang)
+                }
                 showLanguageDialog = false
             },
             onDismiss = { showLanguageDialog = false }
         )
     }
 
-    // — Theme dialog
-    if (showThemeDialog) {
-        ChoiceDialog(
-            title = if (isKhmer) "ជ្រើសរចនាប័ទ្ម" else "Choose Theme",
-            options = listOf("Dark", "Light", "System Default"),
-            selectedOption = theme,
-            onOptionSelected = {
-                theme = it
-                showThemeDialog = false
-            },
-            onDismiss = { showThemeDialog = false }
-        )
-    }
 
-    // — Logout confirmation dialog
+
+    // ── Logout dialog ─────────────────────────────────────────
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            containerColor = Color(0xFF111827),
+            containerColor   = Color(0xFF111827),
             titleContentColor = InkText,
             title = {
                 Text(
-                    text = if (isKhmer) "ចាកចេញ?" else "Log Out?",
-                    style = TextStyle(
-                        fontFamily = Cinzel,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = InkText
-                    )
+                    text  = if (isKhmer) "ចាកចេញ?" else "Log Out?",
+                    style = TextStyle(fontFamily = Cinzel, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = InkText)
                 )
             },
             text = {
                 Text(
-                    text = if (isKhmer) "តើអ្នកប្រាកដថាចង់ចាកចេញពីឧបករណ៍នេះទេ?"
+                    text  = if (isKhmer) "តើអ្នកប្រាកដថាចង់ចាកចេញពីឧបករណ៍នេះទេ?"
                     else "Are you sure you want to sign out from this device?",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 13.sp,
-                        color = MutedText
-                    )
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = MutedText)
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    onLogout()
-                }) {
+                TextButton(onClick = { showLogoutDialog = false; onLogout() }) {
                     Text(
-                        text = if (isKhmer) "ចាកចេញ" else "Log Out",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                            color = Danger
-                        )
+                        text  = if (isKhmer) "ចាកចេញ" else "Log Out",
+                        style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Danger)
                     )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
                     Text(
-                        text = if (isKhmer) "បោះបង់" else "Cancel",
-                        style = TextStyle(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                            color = Primary
-                        )
+                        text  = if (isKhmer) "បោះបង់" else "Cancel",
+                        style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Primary)
                     )
                 }
             }
@@ -179,11 +154,7 @@ fun SettingsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0D1117), Color(0xFF111827), NightBase)
-                )
-            )
+            .background(Brush.verticalGradient(listOf(Color(0xFF0D1117), Color(0xFF111827), NightBase)))
     ) {
         Box(
             modifier = Modifier
@@ -191,18 +162,14 @@ fun SettingsScreen(
                 .height(300.dp)
                 .background(
                     Brush.linearGradient(
-                        listOf(
-                            Primary.copy(alpha = 0.18f),
-                            Primary.copy(alpha = 0.05f),
-                            Color.Transparent
-                        )
+                        listOf(Primary.copy(alpha = 0.18f), Primary.copy(alpha = 0.05f), Color.Transparent)
                     )
                 )
         )
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 22.dp),
+            modifier        = Modifier.fillMaxSize(),
+            contentPadding  = PaddingValues(bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             item { SettingsHeader(onBack = onBack, isKhmer = isKhmer) }
@@ -210,26 +177,26 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = if (isKhmer) "ចំណូលចិត្ត" else "Preferences") {
                     SettingRow(
-                        icon = Icons.Default.Language,
-                        title = if (isKhmer) "ភាសា" else "Language",
+                        icon     = Icons.Default.Language,
+                        title    = if (isKhmer) "ភាសា" else "Language",
                         subtitle = if (isKhmer) "ប្តូររវាងភាសាអង់គ្លេស និងខ្មែរ"
                         else "Change app text between English and Khmer",
-                        value = languageState.current.displayName,
-                        onClick = { showLanguageDialog = true }
+                        value    = languageState.current.displayName,
+                        onClick  = { showLanguageDialog = true }
                     )
                     SettingRow(
-                        icon = Icons.Default.DarkMode,
-                        title = if (isKhmer) "រចនាប័ទ្ម" else "Theme",
+                        icon     = Icons.Default.DarkMode,
+                        title    = if (isKhmer) "រចនាប័ទ្ម" else "Theme",
                         subtitle = if (isKhmer) "ជ្រើសរូបរាង NeakTa" else "Choose how NeakTa looks",
-                        value = theme,
-                        onClick = { showThemeDialog = true }
+                        value    = "",
+                        onClick  = {}
                     )
                     SwitchRow(
-                        icon = Icons.Default.Notifications,
-                        title = if (isKhmer) "ការជូនដំណឹង" else "Notifications",
-                        subtitle = if (isKhmer) "ទទួលការអាប់ដេតអំពី gems ដែលបានរក្សាទុក"
+                        icon            = Icons.Default.Notifications,
+                        title           = if (isKhmer) "ការជូនដំណឹង" else "Notifications",
+                        subtitle        = if (isKhmer) "ទទួលការអាប់ដេតអំពី gems ដែលបានរក្សាទុក"
                         else "Receive updates about saved gems",
-                        checked = notificationsEnabled,
+                        checked         = notificationsEnabled,
                         onCheckedChange = { notificationsEnabled = it }
                     )
                 }
@@ -238,28 +205,28 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = if (isKhmer) "គណនី" else "Account") {
                     SettingRow(
-                        icon = Icons.Default.Edit,
-                        title = if (isKhmer) "កែប្រែប្រវត្តិរូប" else "Edit Profile",
+                        icon     = Icons.Default.Edit,
+                        title    = if (isKhmer) "កែប្រែប្រវត្តិរូប" else "Edit Profile",
                         subtitle = if (isKhmer) "ធ្វើបច្ចុប្បន្នភាពឈ្មោះ ខេត្ត និងរូបថត"
                         else "Update your name, province, and photo",
-                        value = "",
-                        onClick = {}
+                        value    = "",
+                        onClick  = {}
                     )
                     SwitchRow(
-                        icon = Icons.Default.Lock,
-                        title = if (isKhmer) "ប្រវត្តិរូបសាធារណៈ" else "Public Profile",
-                        subtitle = if (isKhmer) "អនុញ្ញាតឱ្យអ្នកប្រើប្រាស់ផ្សេងទៀតមើល gems និងចំណាត់ថ្នាក់របស់អ្នក"
+                        icon            = Icons.Default.Lock,
+                        title           = if (isKhmer) "ប្រវត្តិរូបសាធារណៈ" else "Public Profile",
+                        subtitle        = if (isKhmer) "អនុញ្ញាតឱ្យអ្នកប្រើប្រាស់ផ្សេងទៀតមើល gems និងចំណាត់ថ្នាក់របស់អ្នក"
                         else "Let other users see your gems and rank",
-                        checked = profilePublic,
+                        checked         = profilePublic,
                         onCheckedChange = { profilePublic = it }
                     )
                     SettingRow(
-                        icon = Icons.Default.Logout,
-                        title = if (isKhmer) "ចាកចេញ" else "Logout",
+                        icon     = Icons.Default.Logout,
+                        title    = if (isKhmer) "ចាកចេញ" else "Logout",
                         subtitle = if (isKhmer) "ចាកចេញពីឧបករណ៍នេះ" else "Sign out from this device",
-                        value = "",
-                        danger = true,
-                        onClick = { showLogoutDialog = true }
+                        value    = "",
+                        danger   = true,
+                        onClick  = { showLogoutDialog = true }
                     )
                 }
             }
@@ -267,20 +234,20 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = if (isKhmer) "ជំនួយ" else "Support") {
                     SettingRow(
-                        icon = Icons.Default.Info,
-                        title = if (isKhmer) "អំពី NeakTa" else "About NeakTa",
+                        icon     = Icons.Default.Info,
+                        title    = if (isKhmer) "អំពី NeakTa" else "About NeakTa",
                         subtitle = if (isKhmer) "កំណែ ព័ត៌មានគម្រោង និងគោលបំណង"
                         else "App version, project info, and purpose",
-                        value = "1.0",
-                        onClick = {}
+                        value    = "1.0",
+                        onClick  = {}
                     )
                     SettingRow(
-                        icon = Icons.Default.Help,
-                        title = if (isKhmer) "ជំនួយ" else "Help",
+                        icon     = Icons.Default.Help,
+                        title    = if (isKhmer) "ជំនួយ" else "Help",
                         subtitle = if (isKhmer) "ទទួលការគាំទ្រ ឬស្វែងយល់ពីរបៀបប្រើកម្មវិធី"
                         else "Get support or learn how to use the app",
-                        value = "",
-                        onClick = {}
+                        value    = "",
+                        onClick  = {}
                     )
                 }
             }
@@ -300,67 +267,30 @@ private fun SettingsHeader(onBack: () -> Unit, isKhmer: Boolean) {
             .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = CircleShape,
-            color = GlassPanel,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Outline)
-        ) {
+        Surface(shape = CircleShape, color = GlassPanel, border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
             IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = InkText,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.Default.ArrowBack, "Back", tint = InkText, modifier = Modifier.size(20.dp))
             }
         }
-
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = if (isKhmer) "ការកំណត់" else "SETTINGS",
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 24.sp,
-                    letterSpacing = 5.sp,
-                    color = InkText
-                )
+                text  = if (isKhmer) "ការកំណត់" else "SETTINGS",
+                style = TextStyle(fontFamily = Cinzel, fontSize = 24.sp, letterSpacing = 5.sp, color = InkText)
             )
             Text(
-                text = if (isKhmer) "កំណត់បទពិសោធន៍ NeakTa របស់អ្នក"
-                else "Customize your NeakTa experience",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MutedText
-                )
+                text  = if (isKhmer) "កំណត់បទពិសោធន៍ NeakTa របស់អ្នក" else "Customize your NeakTa experience",
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MutedText)
             )
         }
     }
 }
 
-// — Everything below is unchanged from your original —
-
 @Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Text(
-            text = title,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                color = Primary
-            )
-        )
+private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(text = title, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Primary))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -388,29 +318,18 @@ private fun SettingRow(
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
         SettingsIcon(icon = icon, danger = danger)
         SettingsText(title = title, subtitle = subtitle, danger = danger, modifier = Modifier.weight(1f))
         if (value.isNotBlank()) {
             Text(
-                text = value,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MutedText
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                text  = value,
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MutedText),
+                maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MutedText.copy(alpha = 0.55f),
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(Icons.Default.ChevronRight, null, tint = MutedText.copy(alpha = 0.55f), modifier = Modifier.size(20.dp))
     }
 }
 
@@ -428,16 +347,16 @@ private fun SwitchRow(
             .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
         SettingsIcon(icon = icon)
         SettingsText(title = title, subtitle = subtitle, modifier = Modifier.weight(1f))
         Switch(
-            checked = checked,
+            checked         = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = InkText,
-                checkedTrackColor = Primary,
+                checkedThumbColor   = InkText,
+                checkedTrackColor   = Primary,
                 uncheckedThumbColor = MutedText,
                 uncheckedTrackColor = Color(0xFF28313D)
             )
@@ -452,49 +371,24 @@ private fun SettingsIcon(icon: ImageVector, danger: Boolean = false) {
             .size(40.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(if (danger) Danger.copy(alpha = 0.12f) else Primary.copy(alpha = 0.12f))
-            .border(
-                1.dp,
-                if (danger) Danger.copy(alpha = 0.35f) else Primary.copy(alpha = 0.35f),
-                RoundedCornerShape(14.dp)
-            ),
+            .border(1.dp, if (danger) Danger.copy(alpha = 0.35f) else Primary.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (danger) Danger else Primary,
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(icon, null, tint = if (danger) Danger else Primary, modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable
-private fun SettingsText(
-    title: String,
-    subtitle: String,
-    danger: Boolean = false,
-    modifier: Modifier = Modifier
-) {
+private fun SettingsText(title: String, subtitle: String, danger: Boolean = false, modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = title,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                color = if (danger) Danger else InkText
-            )
+            text  = title,
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (danger) Danger else InkText)
         )
         Text(
-            text = subtitle,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
-                color = MutedText
-            ),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            text     = subtitle,
+            style    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, lineHeight = 15.sp, color = MutedText),
+            maxLines = 2, overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -508,20 +402,12 @@ private fun ChoiceDialog(
     onDismiss: () -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF111827),
+        onDismissRequest  = onDismiss,
+        containerColor    = Color(0xFF111827),
         titleContentColor = InkText,
-        textContentColor = MutedText,
+        textContentColor  = MutedText,
         title = {
-            Text(
-                text = title,
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = InkText
-                )
-            )
+            Text(text = title, style = TextStyle(fontFamily = Cinzel, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = InkText))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -532,25 +418,17 @@ private fun ChoiceDialog(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable { onOptionSelected(option) }
                             .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         RadioButton(
                             selected = option == selectedOption,
-                            onClick = { onOptionSelected(option) },
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = Primary,
-                                unselectedColor = MutedText
-                            )
+                            onClick  = { onOptionSelected(option) },
+                            colors   = RadioButtonDefaults.colors(selectedColor = Primary, unselectedColor = MutedText)
                         )
                         Text(
-                            text = option,
-                            style = TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = InkText
-                            )
+                            text  = option,
+                            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = InkText)
                         )
                     }
                 }
@@ -559,14 +437,7 @@ private fun ChoiceDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(
-                    text = "Cancel",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
-                        color = Primary
-                    )
-                )
+                Text(text = "Cancel", style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Primary))
             }
         }
     )

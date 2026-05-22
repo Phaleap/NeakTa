@@ -15,6 +15,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -46,5 +47,12 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") pinId: String,
         @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
+
+    @POST("api/votes/{pinId}")
+    suspend fun vote(
+        @Header("Authorization") token: String,
+        @Path("pinId") pinId: String,
+        @Query("type") type: String
     ): Response<Map<String, String>>
 }
