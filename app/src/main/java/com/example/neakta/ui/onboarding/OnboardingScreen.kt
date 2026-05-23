@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,9 @@ import androidx.compose.ui.unit.sp
 import com.example.neakta.R
 import com.example.neakta.ui.theme.Cinzel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import com.example.neakta.data.SessionManager
 
 data class OnboardingPage(
     val imageRes: Int,
@@ -79,6 +83,8 @@ private val GlassPanel = Color(0x991A202C)
 fun OnboardingScreen(
     onFinished: () -> Unit
 ) {
+    val context = LocalContext.current                          // ADD
+    val session = remember { SessionManager(context) }
     val pages = listOf(
         OnboardingPage(
             imageRes = R.drawable.onboarding_1,
@@ -151,7 +157,10 @@ fun OnboardingScreen(
 
         OnboardingTopBar(
             modifier = Modifier.align(Alignment.TopCenter),
-            onSkip = onFinished
+            onSkip = {
+                session.setOnboardingSeen()   // ADD
+                onFinished()
+            }
         )
 
         Column(
@@ -185,6 +194,7 @@ fun OnboardingScreen(
                 accent = pages[pagerState.currentPage].accent,
                 onClick = {
                     if (isLastPage) {
+                        session.setOnboardingSeen()   // ADD
                         onFinished()
                     } else {
                         coroutineScope.launch {

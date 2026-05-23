@@ -84,6 +84,9 @@ private val CardEnd = Color(0xCC111827)
 private val SoftOutline = Color(0x26FFFFFF)
 private val GlassPanel = Color(0x991A202C)
 
+
+
+
 // AFTER
 @Composable
 fun PinDetailScreen(
@@ -229,14 +232,15 @@ fun PinDetailScreen(
             }
         }
 
-        // AFTER
+        val hasConfirmed by voteViewModel.hasConfirmed.collectAsState()
+
         BottomFoundBar(
-            foundPressed = foundPressed,
-            localVotes = localVotes,
-            onFoundClick = {
-                voteViewModel.toggleVote(pin.id)
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
+            foundPressed   = foundPressed,
+            hasConfirmed   = hasConfirmed,
+            localVotes     = localVotes,
+            onFoundClick   = { voteViewModel.toggleVote(pin.id) },
+            onConfirmClick = { voteViewModel.confirmExists(pin.id) },
+            modifier       = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
@@ -809,8 +813,10 @@ private fun NeonCapsule(
 @Composable
 private fun BottomFoundBar(
     foundPressed: Boolean,
+    hasConfirmed: Boolean,
     localVotes: Int,
     onFoundClick: () -> Unit,
+    onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -821,22 +827,17 @@ private fun BottomFoundBar(
             modifier = Modifier
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color(0xEE0D1117),
-                            DeepIndigo
-                        )
+                        listOf(Color.Transparent, Color(0xEE0D1117), DeepIndigo)
                     )
                 )
                 .padding(horizontal = 20.dp, vertical = 14.dp)
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Upvote button — existing
             Button(
                 onClick = onFoundClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GlassPanel,
@@ -845,33 +846,38 @@ private fun BottomFoundBar(
                 border = BorderStroke(1.dp, LimePop.copy(alpha = 0.70f)),
                 elevation = null
             ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = null,
-                    tint = LimePop,
-                    modifier = Modifier.size(19.dp)
-                )
+                Icon(Icons.Default.KeyboardArrowUp, null, tint = LimePop, modifier = Modifier.size(19.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (foundPressed) "Saved to the hype list" else "I found this spot",
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = LimePop
-                    )
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = LimePop)
+                )
+            }
+
+            // Confirm exists button — NEW
+            Button(
+                onClick = onConfirmClick,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GlassPanel,
+                    contentColor = if (hasConfirmed) ElectricBlue else MutedText
+                ),
+                border = BorderStroke(1.dp, if (hasConfirmed) ElectricBlue.copy(alpha = 0.70f) else MutedText.copy(alpha = 0.30f)),
+                elevation = null
+            ) {
+                Icon(Icons.Default.TravelExplore, null, tint = if (hasConfirmed) ElectricBlue else MutedText, modifier = Modifier.size(17.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (hasConfirmed) "✓ Still there — confirmed!" else "This place still exists",
+                    style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (hasConfirmed) ElectricBlue else MutedText)
                 )
             }
 
             Text(
                 text = "$localVotes people saved this find",
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MutedText
-                )
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MutedText)
             )
         }
     }

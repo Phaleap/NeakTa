@@ -20,6 +20,9 @@ class VoteViewModel(private val session: SessionManager) : ViewModel() {
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved
 
+    private val _hasConfirmed = MutableStateFlow(false)
+    val hasConfirmed: StateFlow<Boolean> = _hasConfirmed
+
     fun init(initialVotes: Int) {
         _voteCount.value = initialVotes
     }
@@ -60,7 +63,11 @@ class VoteViewModel(private val session: SessionManager) : ViewModel() {
         viewModelScope.launch {
             try {
                 val token = "Bearer ${session.getToken()}"
-                RetrofitClient.instance.vote(token, pinId, "CONFIRM_EXISTS")
+                val response = RetrofitClient.instance.vote(token, pinId, "CONFIRM_EXISTS")
+                if (response.isSuccessful) {
+                    val message = response.body()?.get("message") ?: ""
+                    _hasConfirmed.value = message != "Vote removed"
+                }
             } catch (e: Exception) {
                 android.util.Log.e("VoteVM", "Confirm exists failed: ${e.message}")
             }

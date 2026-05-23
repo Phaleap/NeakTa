@@ -111,4 +111,14 @@ interface ApiService {
         @Path("id") id: String,
         @Body body: PinRequest
     ): Response<PinResponse>
+
+    @GET("api/pins/nearby")
+    suspend fun getNearbyPins(
+        @Header("Authorization") token: String,
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("radiusKm") radiusKm: Double = 10.0
+    ): Response<List<PinResponse>>
+
+
 }

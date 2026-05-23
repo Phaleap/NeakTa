@@ -175,17 +175,22 @@ fun NeaktaNavGraph() {
                 val pin = when (val state = pinsState) {
                     is PinsState.Success -> state.pins.firstOrNull { it.id == pinId }?.let { p ->
                         PinCard(
-                            id       = p.id,
-                            title    = p.title,
-                            province = p.provinceName ?: "",
-                            category = p.categoryName ?: "",
-                            votes    = p.upvoteCount,
-                            story    = p.story,
-                            imageUrl = p.imageUrl ?: "",
-                            author   = p.authorUsername ?: "",
-                            timeAgo  = p.createdAt?.take(10) ?: "",
-                            lat      = p.lat?.toDouble() ?: 11.5564,
-                            lng      = p.lng?.toDouble() ?: 104.9282
+                            id              = p.id,
+                            title           = p.title,
+                            province        = p.provinceName ?: "",
+                            category        = p.categoryName ?: "",
+                            votes           = p.upvoteCount,
+                            story           = p.story,
+                            imageUrl        = p.imageUrl ?: "",
+                            author          = p.authorUsername ?: "",
+                            timeAgo         = p.createdAt?.take(10) ?: "",
+                            lat             = p.lat?.toDouble() ?: 11.5564,
+                            lng             = p.lng?.toDouble() ?: 104.9282,
+                            tags            = p.tags ?: emptyList(),
+                            mediaUrls       = p.mediaUrls ?: emptyList(),
+                            localDirections = p.localDirections ?: "",
+                            stillExistsPct  = p.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
+                            yearDiscovered  = p.createdAt?.take(4) ?: "2024"
                         )
                     }
                     else -> null

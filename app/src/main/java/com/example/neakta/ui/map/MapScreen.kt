@@ -1,5 +1,9 @@
 package com.example.neakta.ui.map
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,6 +36,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +56,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.example.neakta.data.SessionManager
+import com.example.neakta.network.RetrofitClient
+import com.example.neakta.util.getBestLastKnownLocation
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LocalAppLanguage
@@ -64,43 +73,102 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
-private val InkText      = Color(0xFFF7FAFC)
-private val MutedText    = Color(0xFFB8C2CC)
-private val Primary      = Color(0xFF5FD3A6)
-private val DeepBase     = Color(0xFF0D1117)
-private val SurfaceGlass = Color(0x991A202C)
+private val InkText       = Color(0xFFF7FAFC)
+private val MutedText     = Color(0xFFB8C2CC)
+private val Primary       = Color(0xFF5FD3A6)
+private val DeepBase      = Color(0xFF0D1117)
+private val SurfaceGlass  = Color(0x991A202C)
 private val SurfaceStrong = Color(0xE61A202C)
-private val Outline      = Color(0x26FFFFFF)
+private val Outline       = Color(0x26FFFFFF)
 
 @Composable
 fun MapScreen(
     onPinClick: (PinCard) -> Unit,
     viewModel: PinViewModel
 ) {
+    val context = LocalContext.current
+    val session = remember { SessionManager(context) }
     val pinsState by viewModel.pinsState.collectAsState()
     val languageState = LocalAppLanguage.current
     val isKhmer = languageState.current == AppLanguage.KHMER
 
-    var query           by remember { mutableStateOf("") }
+    var query            by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
+    var nearbyPins       by remember { mutableStateOf<List<PinCard>>(emptyList()) }
+    var isLoadingNearby  by remember { mutableStateOf(false) }
+    var userLat          by remember { mutableStateOf<Double?>(null) }
+    var userLng          by remember { mutableStateOf<Double?>(null) }
 
     val categories   = listOf("All", "Food", "Pagoda", "Nature", "Market", "Craft")
     val categoriesKh = listOf("ទាំងអស់", "អាហារ", "វត្ត", "ធម្មជាតិ", "ផ្សារ", "សិប្បកម្ម")
 
+    // — Location permission launcher —
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            getBestLastKnownLocation(context)?.let {
+                userLat = it.latitude
+                userLng = it.longitude
+            }
+        }
+    }
+
+    // — Fetch nearby pins whenever location becomes available —
+    LaunchedEffect(userLat, userLng) {
+        val lat = userLat ?: return@LaunchedEffect
+        val lng = userLng ?: return@LaunchedEffect
+        isLoadingNearby = true
+        try {
+            val token = "Bearer ${session.getToken()}"
+            val response = RetrofitClient.instance.getNearbyPins(token, lat, lng, 10.0)
+            if (response.isSuccessful) {
+                nearbyPins = response.body().orEmpty().map { pin ->
+                    PinCard(
+                        id              = pin.id,
+                        title           = pin.title,
+                        province        = pin.provinceName ?: "",
+                        category        = pin.categoryName ?: "",
+                        votes           = pin.upvoteCount,
+                        story           = pin.story,
+                        imageUrl        = pin.imageUrl ?: "",
+                        author          = pin.authorUsername ?: "",
+                        timeAgo         = pin.createdAt?.take(10) ?: "",
+                        lat             = pin.lat?.toDouble() ?: 11.5564,
+                        lng             = pin.lng?.toDouble() ?: 104.9282,
+                        tags            = pin.tags ?: emptyList(),
+                        mediaUrls       = pin.mediaUrls ?: emptyList(),
+                        localDirections = pin.localDirections ?: "",
+                        stillExistsPct  = pin.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
+                        yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MapScreen", "Nearby fetch failed: ${e.message}")
+        }
+        isLoadingNearby = false
+    }
+
     val allPins = when (val state = pinsState) {
         is PinsState.Success -> state.pins.map { pin ->
             PinCard(
-                id       = pin.id,
-                title    = pin.title,
-                province = pin.provinceName ?: "",
-                category = pin.categoryName ?: "",
-                votes    = pin.upvoteCount,
-                story    = pin.story,
-                imageUrl = pin.imageUrl ?: "",
-                author   = pin.authorUsername ?: "",
-                timeAgo  = pin.createdAt?.take(10) ?: "",
-                lat      = pin.lat?.toDouble() ?: 11.5564,
-                lng      = pin.lng?.toDouble() ?: 104.9282
+                id              = pin.id,
+                title           = pin.title,
+                province        = pin.provinceName ?: "",
+                category        = pin.categoryName ?: "",
+                votes           = pin.upvoteCount,
+                story           = pin.story,
+                imageUrl        = pin.imageUrl ?: "",
+                author          = pin.authorUsername ?: "",
+                timeAgo         = pin.createdAt?.take(10) ?: "",
+                lat             = pin.lat?.toDouble() ?: 11.5564,
+                lng             = pin.lng?.toDouble() ?: 104.9282,
+                tags            = pin.tags ?: emptyList(),
+                mediaUrls       = pin.mediaUrls ?: emptyList(),
+                localDirections = pin.localDirections ?: "",
+                stillExistsPct  = pin.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
+                yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
             )
         }
         else -> emptyList()
@@ -114,6 +182,9 @@ fun MapScreen(
                 pin.category.contains(query, ignoreCase = true)
         matchesCategory && matchesQuery
     }
+
+    // Use nearbyPins if available, otherwise fall back to filteredPins
+    val displayPins = if (nearbyPins.isNotEmpty()) nearbyPins else filteredPins
 
     Box(
         modifier = Modifier
@@ -130,9 +201,9 @@ fun MapScreen(
         )
 
         LazyColumn(
-            modifier        = Modifier.fillMaxSize(),
+            modifier            = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding  = androidx.compose.foundation.layout.PaddingValues(bottom = 116.dp)
+            contentPadding      = androidx.compose.foundation.layout.PaddingValues(bottom = 116.dp)
         ) {
             item { MapHeader(isKhmer = isKhmer) }
 
@@ -156,20 +227,63 @@ fun MapScreen(
 
             item {
                 RealMapPreview(
-                    pins = filteredPins,
+                    pins       = filteredPins,
                     onPinClick = onPinClick,
-                    isKhmer = isKhmer
+                    isKhmer    = isKhmer
                 )
             }
 
+            // — Section title row with "Near me" button —
             item {
-                SectionTitle(
-                    title    = if (isKhmer) "Gems នៅជិត" else "Nearby gems",
-                    subtitle = if (isKhmer) "បញ្ជីត្រៀមផែនទីឥឡូវ លទ្ធផល PostGIS នឹងមកដល់ក្រោយ"
-                    else "A map-ready list now, real PostGIS nearby results later."
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    SectionTitle(
+                        title    = if (isKhmer) "Gems នៅជិត" else "Nearby gems",
+                        subtitle = if (nearbyPins.isNotEmpty())
+                            if (isKhmer) "${nearbyPins.size} gems ក្នុង 10km"
+                            else "${nearbyPins.size} gems within 10km"
+                        else
+                            if (isKhmer) "អនុញ្ញាតទីតាំងដើម្បីរកឃើញ gems ជិតបំផុត"
+                            else "Allow location to find nearest gems"
+                    )
+
+                    Surface(
+                        onClick = {
+                            val perm = Manifest.permission.ACCESS_FINE_LOCATION
+                            if (ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED) {
+                                getBestLastKnownLocation(context)?.let {
+                                    userLat = it.latitude
+                                    userLng = it.longitude
+                                }
+                            } else {
+                                locationPermissionLauncher.launch(perm)
+                            }
+                        },
+                        shape  = RoundedCornerShape(999.dp),
+                        color  = SurfaceGlass,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.55f))
+                    ) {
+                        Row(
+                            modifier              = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.MyLocation, null, tint = Primary, modifier = Modifier.size(15.dp))
+                            Text(
+                                text  = if (isKhmer) "ទីតាំងខ្ញុំ" else "Near me",
+                                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Primary)
+                            )
+                        }
+                    }
+                }
             }
 
+            // — Pin list —
             when (pinsState) {
                 is PinsState.Loading -> item {
                     Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
@@ -185,10 +299,17 @@ fun MapScreen(
                     }
                 }
                 is PinsState.Success -> {
-                    items(filteredPins) { pin ->
+                    if (isLoadingNearby) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Primary, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    }
+                    items(displayPins) { pin ->
                         MapGemCard(pin = pin, onClick = { onPinClick(pin) }, isKhmer = isKhmer)
                     }
-                    if (filteredPins.isEmpty()) {
+                    if (displayPins.isEmpty() && !isLoadingNearby) {
                         item { EmptyMapState(query = query, category = selectedCategory, isKhmer = isKhmer) }
                     }
                 }
