@@ -19,5 +19,9 @@ data class PinResponse(
     val categoryName: String?,
     val categoryIcon: String?,
     val categoryColor: String?,
-    val imageUrl: String?
+    val imageUrl: String?,
+    // ADD THESE:
+    val tags: List<String>? = null,
+    val mediaUrls: List<String>? = null,
+    val localDirections: String? = null,
 )

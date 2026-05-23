@@ -105,7 +105,6 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val session = remember { SessionManager(context) }
-    val viewModel: PinViewModel = viewModel(factory = PinViewModel.Factory(session))
     val pinsState by viewModel.pinsState.collectAsState()
 
     val languageState = LocalAppLanguage.current
@@ -115,18 +114,24 @@ fun HomeScreen(
 
     val allPins = when (val state = pinsState) {
         is PinsState.Success -> state.pins.map { pin ->
+            // FIXED - all fields wired
             PinCard(
-                id       = pin.id,
-                title    = pin.title,
-                province = pin.provinceName ?: "",
-                category = pin.categoryName ?: "",
-                votes    = pin.upvoteCount,
-                story    = pin.story,
-                imageUrl = pin.imageUrl ?: "",
-                author   = pin.authorUsername ?: "",
-                timeAgo  = pin.createdAt?.take(10) ?: "",
-                lat      = pin.lat?.toDouble() ?: 11.5564,
-                lng      = pin.lng?.toDouble() ?: 104.9282
+                id              = pin.id,
+                title           = pin.title,
+                province        = pin.provinceName ?: "",
+                category        = pin.categoryName ?: "",
+                votes           = pin.upvoteCount,
+                story           = pin.story,
+                imageUrl        = pin.imageUrl ?: "",
+                author          = pin.authorUsername ?: "",
+                timeAgo         = pin.createdAt?.take(10) ?: "",
+                lat             = pin.lat?.toDouble() ?: 11.5564,
+                lng             = pin.lng?.toDouble() ?: 104.9282,
+                localDirections = pin.localDirections ?: "",
+                tags            = pin.tags ?: emptyList(),
+                mediaUrls       = pin.mediaUrls ?: emptyList(),
+                stillExistsPct  = if (pin.score > 0) pin.score.coerceIn(0, 100) else 97,
+                yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
             )
         }
         else -> emptyList()

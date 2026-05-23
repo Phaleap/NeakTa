@@ -9,5 +9,8 @@ data class PinRequest(
     val story: String,
     val address: String,
     val lat: BigDecimal,
-    val lng: BigDecimal
+    val lng: BigDecimal,
+    val localDirections: String = "",   // ADD
+    val tags: List<String> = emptyList() // ADD
+
 )

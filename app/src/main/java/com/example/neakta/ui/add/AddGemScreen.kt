@@ -153,15 +153,17 @@ fun AddGemScreen(
     // ── Submit helper (called from both Publish buttons) ──────
     val onSubmit = {
         viewModel.submitPin(
-            title        = gemName,
-            story        = story,
-            address      = localDirections.ifBlank { selectedProvince },
-            provinceName = selectedProvince,
-            categoryName = selectedCategory,
-            lat          = selectedLat,
-            lng          = selectedLng,
-            photoUris    = photoUris,   // ✅ pass selected photos
-            context      = context      // ✅ pass context for URI reading
+            title           = gemName,
+            story           = story,
+            address         = localDirections.ifBlank { selectedProvince },
+            provinceName    = selectedProvince,
+            categoryName    = selectedCategory,
+            lat             = selectedLat,
+            lng             = selectedLng,
+            photoUris       = photoUris,
+            context         = context,
+            localDirections = localDirections,
+            tags            = selectedTags.toList()
         )
     }
 

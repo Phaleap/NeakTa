@@ -66,7 +66,9 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
         lat: Double,
         lng: Double,
         photoUris: List<android.net.Uri>,
-        context: android.content.Context
+        context: android.content.Context,
+        localDirections: String = "",       // ADD THIS
+        tags: List<String> = emptyList()    // ADD THIS
     ) {
         viewModelScope.launch {
             _state.value = AddGemState.Loading
@@ -86,7 +88,9 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
                     story = story,
                     address = address,
                     lat = BigDecimal.valueOf(lat),
-                    lng = BigDecimal.valueOf(lng)
+                    lng = BigDecimal.valueOf(lng),
+                    localDirections = localDirections,   // ADD
+                    tags            = tags                      // ADD — needs to be a parameter
                 )
 
                 val token = "Bearer ${session.getToken()}"
