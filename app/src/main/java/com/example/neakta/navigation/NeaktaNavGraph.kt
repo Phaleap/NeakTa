@@ -41,7 +41,6 @@ fun NeaktaNavGraph() {
         factory = AuthViewModel.Factory(session)
     )
 
-    // ✅ Single shared PinViewModel — all screens use this one instance
     val pinViewModel: PinViewModel = viewModel(
         factory = PinViewModel.Factory(session)
     )
@@ -50,7 +49,7 @@ fun NeaktaNavGraph() {
     val startDestination = when {
         session.isLoggedIn() -> "home"
         session.hasSeenOnboarding() -> "login"
-        else -> "splash"
+        else -> "onboarding"
     }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -95,7 +94,7 @@ fun NeaktaNavGraph() {
                 LoginScreen(
                     onLoginSuccess = {
                         pinViewModel.fetchPins()
-                        navController.navigate("onboarding") {
+                        navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
                     },
@@ -120,7 +119,7 @@ fun NeaktaNavGraph() {
             composable("onboarding") {
                 OnboardingScreen(
                     onFinished = {
-                        navController.navigate("home") {
+                        navController.navigate("login") {
                             popUpTo("onboarding") { inclusive = true }
                         }
                     }
@@ -131,14 +130,14 @@ fun NeaktaNavGraph() {
                 HomeScreen(
                     onNavigateToProfile = { navController.navigate("profile") },
                     onPinClick          = { pin -> navController.navigate("pin_detail/${pin.id}") },
-                    viewModel           = pinViewModel   // ✅ pass shared VM
+                    viewModel           = pinViewModel
                 )
             }
 
             composable("map") {
                 MapScreen(
                     onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") },
-                    viewModel  = pinViewModel             // ✅ pass shared VM
+                    viewModel  = pinViewModel
                 )
             }
 
@@ -146,7 +145,7 @@ fun NeaktaNavGraph() {
                 RanksScreen(
                     onNavigateToProfile = { navController.navigate("profile") },
                     onPinClick          = { pin -> navController.navigate("pin_detail/${pin.id}") },
-                    viewModel           = pinViewModel    // ✅ pass shared VM
+                    viewModel           = pinViewModel
                 )
             }
 
@@ -171,7 +170,6 @@ fun NeaktaNavGraph() {
             composable("pin_detail/{pinId}") { backStackEntry ->
                 val pinId = backStackEntry.arguments?.getString("pinId")
 
-                // ✅ Reuse already-loaded state — no extra API call
                 val pin = when (val state = pinsState) {
                     is PinsState.Success -> state.pins.firstOrNull { it.id == pinId }?.let { p ->
                         PinCard(
@@ -198,8 +196,9 @@ fun NeaktaNavGraph() {
 
                 if (pin != null) {
                     PinDetailScreen(
-                        pin    = pin,
-                        onBack = { navController.popBackStack() }
+                        pin       = pin,
+                        onBack    = { navController.popBackStack() },
+                        onRefresh = { pinViewModel.fetchPins() }
                     )
                 }
             }
@@ -208,7 +207,7 @@ fun NeaktaNavGraph() {
                 AddGemScreen(
                     onBack = { navController.popBackStack() },
                     onPublished = {
-                        pinViewModel.fetchPins()          // ✅ explicit refresh
+                        pinViewModel.fetchPins()
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
                         }
