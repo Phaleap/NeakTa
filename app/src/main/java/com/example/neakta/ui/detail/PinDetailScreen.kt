@@ -50,7 +50,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,14 +83,11 @@ private val CardEnd = Color(0xCC111827)
 private val SoftOutline = Color(0x26FFFFFF)
 private val GlassPanel = Color(0x991A202C)
 
-
-
-
-// AFTER
 @Composable
 fun PinDetailScreen(
     pin: PinCard,
     onBack: () -> Unit,
+    onRefresh: () -> Unit = {},
     voteViewModel: VoteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         factory = VoteViewModel.Factory(SessionManager(LocalContext.current))
     )
@@ -101,7 +97,6 @@ fun PinDetailScreen(
     val pageScroll = rememberScrollState()
     val tagScroll = rememberScrollState()
 
-    // ✅ Init vote count from pin
     androidx.compose.runtime.LaunchedEffect(pin.id) {
         voteViewModel.init(pin.votes)
     }
@@ -109,6 +104,7 @@ fun PinDetailScreen(
     val localVotes by voteViewModel.voteCount.collectAsState()
     val foundPressed by voteViewModel.hasVoted.collectAsState()
     val isSaved by voteViewModel.isSaved.collectAsState()
+    val hasConfirmed by voteViewModel.hasConfirmed.collectAsState()
 
     Box(
         modifier = Modifier
@@ -147,7 +143,10 @@ fun PinDetailScreen(
         ) {
             HeroSection(
                 pin = pin,
-                onBack = onBack,
+                onBack = {
+                    onRefresh()
+                    onBack()
+                },
                 isSaved = isSaved,
                 onSaveClick = { voteViewModel.toggleSaved(pin.id) }
             )
@@ -173,10 +172,7 @@ fun PinDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         pin.tags.forEach { tag ->
-                            NeonCapsule(
-                                text = tag,
-                                accent = Bubblegum
-                            )
+                            NeonCapsule(text = tag, accent = Bubblegum)
                         }
                     }
                 }
@@ -200,9 +196,7 @@ fun PinDetailScreen(
 
                 LocationPanel(
                     pin = pin,
-                    onOpenMaps = {
-                        openInMaps(context, pin.lat, pin.lng, pin.title)
-                    },
+                    onOpenMaps = { openInMaps(context, pin.lat, pin.lng, pin.title) },
                     onCopyCoords = {
                         clipboardManager.setText(AnnotatedString("${pin.lat}, ${pin.lng}"))
                     }
@@ -231,8 +225,6 @@ fun PinDetailScreen(
                 }
             }
         }
-
-        val hasConfirmed by voteViewModel.hasConfirmed.collectAsState()
 
         BottomFoundBar(
             foundPressed   = foundPressed,
@@ -320,7 +312,7 @@ private fun HeroSection(
                     accent = ElectricBlue
                 )
                 NeonCapsule(
-                    text = "#${pin.id} rising",
+                    text = "#${pin.votes} rising",
                     accent = LimePop
                 )
             }
@@ -386,7 +378,6 @@ private fun GalleryNavigation(
             onClick = onPrevious,
             enabled = currentPage > 0
         )
-
         GlassIconButton(
             icon = Icons.Default.ChevronRight,
             contentDescription = "Next photo",
@@ -482,7 +473,6 @@ private fun PinHeader(pin: PinCard) {
                     )
                 )
             }
-
             Text(
                 text = pin.timeAgo,
                 style = TextStyle(
@@ -512,7 +502,6 @@ private fun PinHeader(pin: PinCard) {
                         .size(15.dp)
                 )
             }
-
             Text(
                 text = "Pinned by ${pin.author}",
                 style = TextStyle(
@@ -527,10 +516,7 @@ private fun PinHeader(pin: PinCard) {
 }
 
 @Composable
-private fun StatsRow(
-    pin: PinCard,
-    localVotes: Int
-) {
+private fun StatsRow(pin: PinCard, localVotes: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -575,30 +561,15 @@ private fun StatCard(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = accent,
-            modifier = Modifier.size(17.dp)
-        )
+        Icon(imageVector = icon, contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
         Text(
             text = value,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                color = InkText
-            ),
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 22.sp, fontWeight = FontWeight.Black, color = InkText),
             maxLines = 1
         )
         Text(
             text = label,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = MutedText
-            ),
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MutedText),
             maxLines = 1
         )
     }
@@ -618,9 +589,7 @@ private fun DetailPanel(
             .background(Brush.linearGradient(listOf(CardStart, CardEnd)))
             .border(
                 width = 1.dp,
-                brush = Brush.linearGradient(
-                    listOf(accent.copy(alpha = 0.48f), SoftOutline, Color.Transparent)
-                ),
+                brush = Brush.linearGradient(listOf(accent.copy(alpha = 0.48f), SoftOutline, Color.Transparent)),
                 shape = RoundedCornerShape(26.dp)
             )
             .padding(18.dp),
@@ -628,23 +597,11 @@ private fun DetailPanel(
     ) {
         Text(
             text = eyebrow,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.2.sp,
-                color = accent
-            )
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp, color = accent)
         )
         Text(
             text = title,
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 24.sp,
-                lineHeight = 27.sp,
-                fontWeight = FontWeight.Black,
-                color = InkText
-            )
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 24.sp, lineHeight = 27.sp, fontWeight = FontWeight.Black, color = InkText)
         )
         content()
     }
@@ -656,25 +613,13 @@ private fun LocationPanel(
     onOpenMaps: () -> Unit,
     onCopyCoords: () -> Unit
 ) {
-    DetailPanel(
-        eyebrow = "FIND IT",
-        title = "Coordinates plus the local hint",
-        accent = LimePop
-    ) {
+    DetailPanel(eyebrow = "FIND IT", title = "Coordinates plus the local hint", accent = LimePop) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(132.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            Color(0xFF111827),
-                            Color(0xFF1A202C),
-                            Color(0xFF0D1117)
-                        )
-                    )
-                )
+                .background(Brush.linearGradient(listOf(Color(0xFF111827), Color(0xFF1A202C), Color(0xFF0D1117))))
                 .border(1.dp, SoftOutline, RoundedCornerShape(20.dp))
         ) {
             Box(
@@ -686,60 +631,24 @@ private fun LocationPanel(
                     .border(1.dp, LimePop.copy(alpha = 0.55f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = LimePop,
-                    modifier = Modifier.size(34.dp)
-                )
+                Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = LimePop, modifier = Modifier.size(34.dp))
             }
-
             Text(
                 text = "${pin.lat}, ${pin.lng}",
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 14.dp),
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = InkText
-                )
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = InkText)
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            DetailActionButton(
-                text = "Open maps",
-                icon = Icons.Default.Directions,
-                accent = LimePop,
-                filled = true,
-                onClick = onOpenMaps,
-                modifier = Modifier.weight(1f)
-            )
-            DetailActionButton(
-                text = "Copy coords",
-                icon = Icons.Default.ContentCopy,
-                accent = ElectricBlue,
-                filled = false,
-                onClick = onCopyCoords,
-                modifier = Modifier.weight(1f)
-            )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            DetailActionButton(text = "Open maps", icon = Icons.Default.Directions, accent = LimePop, filled = true, onClick = onOpenMaps, modifier = Modifier.weight(1f))
+            DetailActionButton(text = "Copy coords", icon = Icons.Default.ContentCopy, accent = ElectricBlue, filled = false, onClick = onCopyCoords, modifier = Modifier.weight(1f))
         }
 
         if (pin.localDirections.isNotBlank()) {
             Text(
                 text = pin.localDirections,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MutedText
-                )
+                style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = MutedText)
             )
         }
     }
@@ -766,31 +675,15 @@ private fun DetailActionButton(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(17.dp)
-            )
+            Icon(imageVector = icon, contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
             Spacer(modifier = Modifier.width(7.dp))
-            Text(
-                text = text,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = accent
-                )
-            )
+            Text(text = text, style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accent))
         }
     }
 }
 
 @Composable
-private fun NeonCapsule(
-    text: String,
-    accent: Color
-) {
+private fun NeonCapsule(text: String, accent: Color) {
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = Color.White.copy(alpha = 0.08f),
@@ -799,13 +692,7 @@ private fun NeonCapsule(
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            style = TextStyle(
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 0.7.sp,
-                color = InkText
-            )
+            style = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.7.sp, color = InkText)
         )
     }
 }
@@ -819,30 +706,19 @@ private fun BottomFoundBar(
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = Color.Transparent
-    ) {
+    Surface(modifier = modifier.fillMaxWidth(), color = Color.Transparent) {
         Column(
             modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, Color(0xEE0D1117), DeepIndigo)
-                    )
-                )
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xEE0D1117), DeepIndigo)))
                 .padding(horizontal = 20.dp, vertical = 14.dp)
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Upvote button — existing
             Button(
                 onClick = onFoundClick,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GlassPanel,
-                    contentColor = LimePop
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = GlassPanel, contentColor = LimePop),
                 border = BorderStroke(1.dp, LimePop.copy(alpha = 0.70f)),
                 elevation = null
             ) {
@@ -854,7 +730,6 @@ private fun BottomFoundBar(
                 )
             }
 
-            // Confirm exists button — NEW
             Button(
                 onClick = onConfirmClick,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -890,9 +765,7 @@ fun openInMaps(context: Context, lat: Double, lng: Double, label: String) {
     if (intent.resolveActivity(context.packageManager) != null) {
         context.startActivity(intent)
     } else {
-        val browserUri = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=$lat,$lng"
-        )
+        val browserUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng")
         context.startActivity(Intent(Intent.ACTION_VIEW, browserUri))
     }
 }
