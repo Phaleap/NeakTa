@@ -58,6 +58,19 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<UserResponse>
 
+    @PUT("api/users/me")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, String>
+    ): Response<UserResponse>
+
+    @Multipart
+    @PUT("api/users/me/avatar")    // ✅ matches your Spring controller
+    suspend fun uploadAvatar(
+        @Header("Authorization") token: String,
+        @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
+
     @GET("api/provinces")
     suspend fun getProvinces(
         @Header("Authorization") token: String

@@ -24,16 +24,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.neakta.data.SessionManager
 import com.example.neakta.model.PinResponse
 import com.example.neakta.model.UserResponse
 import com.example.neakta.ui.auth.Cinzel
@@ -54,9 +51,9 @@ private val DangerRed  = Color(0xFFEF4444)
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit = {},
-    viewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModel.Factory(SessionManager(LocalContext.current))
-    )
+    // FIX: No default viewModel() creation here. The NavGraph passes in the
+    // shared instance so ProfileScreen and SettingsScreen stay in sync.
+    viewModel: ProfileViewModel
 ) {
     val state      by viewModel.state.collectAsState()
     val editingPin by viewModel.editingPin.collectAsState()
@@ -109,7 +106,7 @@ fun ProfileScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 ProfileTopBar(
                     onNavigateToSettings = onNavigateToSettings,
-                    isKhmer = isKhmer
+                    isKhmer              = isKhmer
                 )
 
                 when (val s = state) {
@@ -127,7 +124,7 @@ fun ProfileScreen(
                                 Text(s.message, style = TextStyle(color = MutedText, fontSize = 14.sp))
                                 Button(
                                     onClick = { viewModel.fetchProfile() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                                    colors  = ButtonDefaults.buttonColors(containerColor = Primary)
                                 ) {
                                     Text(
                                         if (isKhmer) "ព្យាយាមម្ដងទៀត" else "Retry",
@@ -231,7 +228,7 @@ private fun ProfileHeroCard(user: UserResponse, isKhmer: Boolean) {
         )
 
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier            = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             // Avatar + info row

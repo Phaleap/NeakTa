@@ -5,6 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +28,7 @@ import com.example.neakta.ui.home.PinsState
 import com.example.neakta.ui.map.MapScreen
 import com.example.neakta.ui.onboarding.OnboardingScreen
 import com.example.neakta.ui.profile.ProfileScreen
+import com.example.neakta.ui.profile.ProfileViewModel
 import com.example.neakta.ui.ranks.RanksScreen
 import com.example.neakta.ui.settings.SettingsScreen
 import com.example.neakta.ui.splash.SplashScreen
@@ -45,6 +47,19 @@ fun NeaktaNavGraph() {
         factory = PinViewModel.Factory(session)
     )
     val pinsState by pinViewModel.pinsState.collectAsState()
+
+    // FIX: Create ONE shared ProfileViewModel here at the NavGraph level.
+    // Both ProfileScreen and SettingsScreen receive this same instance,
+    // so any update (name / avatar) in Settings immediately reflects in Profile.
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModel.Factory(session)
+    )
+
+    val startDestination = when {
+        session.isLoggedIn() -> "home"
+        session.hasSeenOnboarding() -> "login"
+        else -> "onboarding"
+    }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val navBarRoutes = setOf("home", "map", "ranks", "profile")
@@ -71,22 +86,14 @@ fun NeaktaNavGraph() {
     ) { paddingValues ->
         NavHost(
             navController    = navController,
-            startDestination = "splash",
+            startDestination = startDestination,
             modifier         = Modifier.padding(paddingValues)
         ) {
             composable("splash") {
                 SplashScreen(
                     onGetStarted = {
-                        when {
-                            session.isLoggedIn() -> navController.navigate("home") {
-                                popUpTo("splash") { inclusive = true }
-                            }
-                            session.hasSeenOnboarding() -> navController.navigate("login") {
-                                popUpTo("splash") { inclusive = true }
-                            }
-                            else -> navController.navigate("onboarding") {
-                                popUpTo("splash") { inclusive = true }
-                            }
+                        navController.navigate("login") {
+                            popUpTo("splash") { inclusive = true }
                         }
                     }
                 )
@@ -152,20 +159,27 @@ fun NeaktaNavGraph() {
             }
 
             composable("profile") {
+                // FIX: Pass the shared profileViewModel instead of letting
+                // ProfileScreen create its own isolated instance.
                 ProfileScreen(
-                    onNavigateToSettings = { navController.navigate("settings") }
+                    onNavigateToSettings = { navController.navigate("settings") },
+                    viewModel            = profileViewModel
                 )
             }
 
             composable("settings") {
+                // FIX: Pass the exact same shared profileViewModel so that
+                // when Settings saves a name or avatar and calls fetchProfile(),
+                // the ProfileScreen StateFlow updates automatically.
                 SettingsScreen(
-                    onBack = { navController.popBackStack() },
-                    onLogout = {
+                    onBack    = { navController.popBackStack() },
+                    onLogout  = {
                         session.clearSession()
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
-                    }
+                    },
+                    viewModel = profileViewModel
                 )
             }
 
