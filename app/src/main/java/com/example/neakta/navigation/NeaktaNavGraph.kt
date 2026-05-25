@@ -46,12 +46,6 @@ fun NeaktaNavGraph() {
     )
     val pinsState by pinViewModel.pinsState.collectAsState()
 
-    val startDestination = when {
-        session.isLoggedIn() -> "home"
-        session.hasSeenOnboarding() -> "login"
-        else -> "onboarding"
-    }
-
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val navBarRoutes = setOf("home", "map", "ranks", "profile")
 
@@ -77,14 +71,22 @@ fun NeaktaNavGraph() {
     ) { paddingValues ->
         NavHost(
             navController    = navController,
-            startDestination = startDestination,
+            startDestination = "splash",
             modifier         = Modifier.padding(paddingValues)
         ) {
             composable("splash") {
                 SplashScreen(
                     onGetStarted = {
-                        navController.navigate("login") {
-                            popUpTo("splash") { inclusive = true }
+                        when {
+                            session.isLoggedIn() -> navController.navigate("home") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                            session.hasSeenOnboarding() -> navController.navigate("login") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                            else -> navController.navigate("onboarding") {
+                                popUpTo("splash") { inclusive = true }
+                            }
                         }
                     }
                 )

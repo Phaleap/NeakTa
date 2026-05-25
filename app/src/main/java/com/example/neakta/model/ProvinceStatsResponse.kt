@@ -1,7 +1,7 @@
 package com.example.neakta.model
 
 data class ProvinceStatsResponse(
-    val id: Int,
+    val id: String,
     val province: ProvinceResponse,
     val totalPins: Int,
     val totalUpvotes: Int,
