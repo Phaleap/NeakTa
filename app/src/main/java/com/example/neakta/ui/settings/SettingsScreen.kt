@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -73,7 +72,7 @@ fun SettingsScreen(
     val profileState by viewModel.state.collectAsState()
     val isUpdating by viewModel.isUpdatingProfile.collectAsState()
 
-    var notificationsEnabled by remember { mutableStateOf(true) }
+
     var profilePublic        by remember { mutableStateOf(true) }
     var showLanguageDialog   by remember { mutableStateOf(false) }
     var showLogoutDialog     by remember { mutableStateOf(false) }
@@ -249,13 +248,6 @@ fun SettingsScreen(
                         subtitle = if (isKhmer) "ជ្រើសរើសរវាងភាសាខ្មែរ និងអង់គ្លេស" else "Switch between Khmer and English",
                         value    = languageState.current.displayName,
                         onClick  = { showLanguageDialog = true }
-                    )
-                    SwitchRow(
-                        icon            = Icons.Default.Notifications,
-                        title           = if (isKhmer) "ការជូនដំណឹង" else "Notifications",
-                        subtitle        = if (isKhmer) "ទទួលការអាប់ដេតអំពី gems ដែលបានរក្សាទុក" else "Receive updates about saved gems",
-                        checked         = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }
                     )
                 }
             }
