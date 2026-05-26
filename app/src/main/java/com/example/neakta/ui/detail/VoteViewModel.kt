@@ -23,8 +23,19 @@ class VoteViewModel(private val session: SessionManager) : ViewModel() {
     private val _hasConfirmed = MutableStateFlow(false)
     val hasConfirmed: StateFlow<Boolean> = _hasConfirmed
 
-    fun init(initialVotes: Int) {
+    fun init(initialVotes: Int, pinId: String) {
         _voteCount.value = initialVotes
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${session.getToken()}"
+                val response = RetrofitClient.instance.getSavedPins(token)
+                if (response.isSuccessful) {
+                    _isSaved.value = response.body()?.any { it.id == pinId } == true
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VoteVM", "Check saved failed: ${e.message}")
+            }
+        }
     }
 
     fun toggleVote(pinId: String) {

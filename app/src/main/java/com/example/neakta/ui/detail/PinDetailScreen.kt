@@ -98,7 +98,7 @@ fun PinDetailScreen(
     val tagScroll = rememberScrollState()
 
     androidx.compose.runtime.LaunchedEffect(pin.id) {
-        voteViewModel.init(pin.votes)
+            voteViewModel.init(pin.votes, pin.id)
     }
 
     val localVotes by voteViewModel.voteCount.collectAsState()

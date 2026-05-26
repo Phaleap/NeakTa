@@ -28,7 +28,7 @@ private val SurfaceGlass = Color(0x991A202C)
 private val MutedText = Color(0xFFB8C2CC)
 private val Outline = Color(0x26FFFFFF)
 
-enum class NavTab { HOME, MAP, ADD, RANKS, PROFILE }
+enum class NavTab { HOME, MAP, ADD, RANKS, SAVED }
 
 @Composable
 fun NeaktaBottomNav(
@@ -99,10 +99,10 @@ fun NeaktaBottomNav(
             onClick = onNavigateRanks
         )
         NavItem(
-            icon = Icons.Default.Person,
-            label = "Profile",
-            selected = activeTab == NavTab.PROFILE,
-            onClick = onNavigateProfile
+            icon = Icons.Default.Bookmark,   // was Icons.Default.Person
+            label = "Saved",                  // was "Profile"
+            selected = activeTab == NavTab.SAVED,
+            onClick = onNavigateProfile       // rename param below
         )
     }
 }

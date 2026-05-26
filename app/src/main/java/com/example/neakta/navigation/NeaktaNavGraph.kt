@@ -5,7 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import com.example.neakta.ui.saved.SavedScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -62,24 +62,24 @@ fun NeaktaNavGraph() {
     }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val navBarRoutes = setOf("home", "map", "ranks", "profile")
+    val navBarRoutes = setOf("home", "map", "ranks", "saved")
 
     Scaffold(
         bottomBar = {
             if (currentRoute in navBarRoutes) {
                 NeaktaBottomNav(
                     activeTab = when (currentRoute) {
-                        "home"    -> NavTab.HOME
-                        "map"     -> NavTab.MAP
-                        "ranks"   -> NavTab.RANKS
-                        "profile" -> NavTab.PROFILE
-                        else      -> NavTab.HOME
+                        "home"  -> NavTab.HOME
+                        "map"   -> NavTab.MAP
+                        "ranks" -> NavTab.RANKS
+                        "saved" -> NavTab.SAVED
+                        else    -> NavTab.HOME
                     },
                     onNavigateHome    = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
                     onNavigateMap     = { navController.navigate("map") },
                     onNavigateAdd     = { navController.navigate("add_gem") },
                     onNavigateRanks   = { navController.navigate("ranks") },
-                    onNavigateProfile = { navController.navigate("profile") }
+                    onNavigateProfile = { navController.navigate("saved") }
                 )
             }
         }
@@ -164,6 +164,12 @@ fun NeaktaNavGraph() {
                 ProfileScreen(
                     onNavigateToSettings = { navController.navigate("settings") },
                     viewModel            = profileViewModel
+                )
+            }
+            composable("saved") {
+                SavedScreen(
+                    onPinClick = { pin -> navController.navigate("pin_detail/${pin.id}") },
+                    onNavigateToProfile = { navController.navigate("profile") }
                 )
             }
 
