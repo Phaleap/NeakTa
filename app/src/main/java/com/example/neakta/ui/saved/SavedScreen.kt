@@ -1,5 +1,9 @@
 package com.example.neakta.ui.saved
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -161,7 +166,26 @@ fun SavedScreen(
                                 )
                             }
                             items(s.pins) { pin ->
-                                SavedPinCard(pin = pin, onClick = { onPinClick(pin) })
+                                SavedPinCard(
+                                    pin = pin,
+                                    onClick = { onPinClick(pin) },
+                                    onShareMessenger = {
+                                        sharePinToApps(
+                                            context = context,
+                                            pin = pin,
+                                            packages = listOf("com.facebook.orca"),
+                                            appName = "Messenger"
+                                        )
+                                    },
+                                    onShareTelegram = {
+                                        sharePinToApps(
+                                            context = context,
+                                            pin = pin,
+                                            packages = listOf("org.telegram.messenger", "org.telegram.messenger.web"),
+                                            appName = "Telegram"
+                                        )
+                                    }
+                                )
                             }
                             item {
                                 Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -175,7 +199,12 @@ fun SavedScreen(
 }
 
 @Composable
-private fun SavedPinCard(pin: PinCard, onClick: () -> Unit) {
+private fun SavedPinCard(
+    pin: PinCard,
+    onClick: () -> Unit,
+    onShareMessenger: () -> Unit,
+    onShareTelegram: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,6 +287,62 @@ private fun SavedPinCard(pin: PinCard, onClick: () -> Unit) {
                     style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = LimePop)
                 )
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ShareChip(text = "Messenger", onClick = onShareMessenger)
+                ShareChip(text = "Telegram", onClick = onShareTelegram)
+            }
         }
     }
+}
+
+@Composable
+private fun ShareChip(text: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        color = GlassPanel,
+        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricBlue.copy(alpha = 0.55f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(Icons.Default.Send, contentDescription = null, tint = ElectricBlue, modifier = Modifier.size(12.dp))
+            Text(
+                text = text,
+                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = ElectricBlue)
+            )
+        }
+    }
+}
+
+private fun sharePinToApps(
+    context: Context,
+    pin: PinCard,
+    packages: List<String>,
+    appName: String
+) {
+    val mapUrl = "https://www.google.com/maps/search/?api=1&query=${pin.lat},${pin.lng}"
+    val shareText = buildString {
+        append("Check out ${pin.title}")
+        if (pin.province.isNotBlank()) append(" in ${pin.province}")
+        append("\n$mapUrl")
+    }
+
+    for (packageName in packages) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            setPackage(packageName)
+        }
+        try {
+            context.startActivity(intent)
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Try the next known package variant.
+        }
+    }
+
+    Toast.makeText(context, "$appName is not installed", Toast.LENGTH_SHORT).show()
 }

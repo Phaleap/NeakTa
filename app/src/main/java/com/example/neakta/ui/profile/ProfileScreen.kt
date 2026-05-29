@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.neakta.model.PinResponse
 import com.example.neakta.model.UserResponse
+import com.example.neakta.network.normalizeImageUrl
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LocalAppLanguage
@@ -143,6 +144,7 @@ fun ProfileScreen(
                             item {
                                 ProfileHeroCard(
                                     user    = s.user,
+                                    totalPins = s.pins.size,  // ADD THIS
                                     isKhmer = isKhmer
                                 )
                             }
@@ -206,7 +208,7 @@ fun ProfileScreen(
 
 // ── Profile Hero Card ─────────────────────────────────────────────────────────
 @Composable
-private fun ProfileHeroCard(user: UserResponse, isKhmer: Boolean) {
+private fun ProfileHeroCard(user: UserResponse, totalPins: Int, isKhmer: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -245,9 +247,10 @@ private fun ProfileHeroCard(user: UserResponse, isKhmer: Boolean) {
                         .background(GlassPanel),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (user.avatarUrl != null) {
+                    val avatarUrl = normalizeImageUrl(user.avatarUrl)
+                    if (avatarUrl.isNotBlank()) {
                         AsyncImage(
-                            model              = user.avatarUrl,
+                            model              = avatarUrl,
                             contentDescription = null,
                             contentScale       = ContentScale.Crop,
                             modifier           = Modifier.fillMaxSize()
@@ -350,7 +353,7 @@ private fun ProfileHeroCard(user: UserResponse, isKhmer: Boolean) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatCell(
-                    value    = user.totalPins.toString(),
+                    value    = totalPins.toString(),
                     label    = if (isKhmer) "Gems" else "Gems",
                     modifier = Modifier.weight(1f)
                 )
@@ -481,9 +484,10 @@ private fun GemCard(
                     .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (pin.imageUrl != null) {
+                val imageUrl = normalizeImageUrl(pin.imageUrl)
+                if (imageUrl.isNotBlank()) {
                     AsyncImage(
-                        model              = pin.imageUrl,
+                        model              = imageUrl,
                         contentDescription = null,
                         contentScale       = ContentScale.Crop,
                         modifier           = Modifier.fillMaxSize()

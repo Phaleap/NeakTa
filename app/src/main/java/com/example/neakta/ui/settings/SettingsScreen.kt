@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.neakta.network.normalizeImageUrl
 import com.example.neakta.ui.auth.Cinzel
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LanguagePreference
@@ -73,7 +73,6 @@ fun SettingsScreen(
     val isUpdating by viewModel.isUpdatingProfile.collectAsState()
 
 
-    var profilePublic        by remember { mutableStateOf(true) }
     var showLanguageDialog   by remember { mutableStateOf(false) }
     var showLogoutDialog     by remember { mutableStateOf(false) }
     var showAboutDialog      by remember { mutableStateOf(false) }
@@ -104,7 +103,7 @@ fun SettingsScreen(
         if (user != null) {
             EditProfileDialog(
                 currentName = user.displayName ?: user.username,
-                currentAvatar = user.avatarUrl,
+                currentAvatar = normalizeImageUrl(user.avatarUrl),
                 isKhmer = isKhmer,
                 isUpdating = isUpdating,
                 onSaveName = { newName -> viewModel.updateProfile(newName) },
@@ -261,13 +260,6 @@ fun SettingsScreen(
                         subtitle = if (isKhmer) "ធ្វើបច្ចុប្បន្នភាពឈ្មោះ ខេត្ត និងរូបថត" else "Update your name, province, and photo",
                         value    = "",
                         onClick  = { showEditProfileDialog = true }
-                    )
-                    SwitchRow(
-                        icon            = Icons.Default.Lock,
-                        title           = if (isKhmer) "ប្រវត្តិរូបសាធារណៈ" else "Public Profile",
-                        subtitle        = if (isKhmer) "អនុញ្ញាតឱ្យអ្នកប្រើផ្សេងទៀតមើល gems របស់អ្នក" else "Let other users see your gems and rank",
-                        checked         = profilePublic,
-                        onCheckedChange = { profilePublic = it }
                     )
                     SettingRow(
                         icon     = Icons.AutoMirrored.Filled.Logout,

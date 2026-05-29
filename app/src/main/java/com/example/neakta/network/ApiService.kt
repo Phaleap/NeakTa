@@ -2,6 +2,8 @@ package com.example.neakta.network
 
 import com.example.neakta.model.AuthResponse
 import com.example.neakta.model.CategoryResponse
+import com.example.neakta.model.CommentRequest
+import com.example.neakta.model.CommentResponse
 import com.example.neakta.model.LoginRequest
 import com.example.neakta.model.PinRequest
 import com.example.neakta.model.PinResponse
@@ -21,6 +23,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+
 
 interface ApiService {
 
@@ -105,6 +108,30 @@ interface ApiService {
         @Part file: MultipartBody.Part
     ): Response<Map<String, String>>
 
+    @Multipart
+    @PUT("api/pins/{id}/photos")
+    suspend fun updatePinPhoto(
+        @Header("Authorization") token: String,
+        @Path("id") pinId: String,
+        @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
+
+    @Multipart
+    @POST("api/pins/{id}/photo")
+    suspend fun uploadPinPhotoSingular(
+        @Header("Authorization") token: String,
+        @Path("id") pinId: String,
+        @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
+
+    @Multipart
+    @PUT("api/pins/{id}/photo")
+    suspend fun updatePinPhotoSingular(
+        @Header("Authorization") token: String,
+        @Path("id") pinId: String,
+        @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
+
     @POST("api/votes/{pinId}")
     suspend fun vote(
         @Header("Authorization") token: String,
@@ -133,5 +160,30 @@ interface ApiService {
         @Query("radiusKm") radiusKm: Double = 10.0
     ): Response<List<PinResponse>>
 
+    @GET("api/pins/{pinId}/comments")
+    suspend fun getComments(
+        @Header("Authorization") token: String,
+        @Path("pinId") pinId: String
+    ): Response<List<CommentResponse>>
+
+    @POST("api/pins/{pinId}/comments")
+    suspend fun addComment(
+        @Header("Authorization") token: String,
+        @Path("pinId") pinId: String,
+        @Body body: CommentRequest  // 👈 change from Map<String, String>
+    ): Response<CommentResponse>
+
+    @PUT("comments/{commentId}")
+    suspend fun editComment(
+        @Header("Authorization") token: String,
+        @Path("commentId") commentId: String,
+        @Body body: CommentRequest
+    ): Response<CommentResponse>
+
+    @DELETE("comments/{commentId}")
+    suspend fun deleteComment(
+        @Header("Authorization") token: String,
+        @Path("commentId") commentId: String
+    ): Response<Unit>
 
 }

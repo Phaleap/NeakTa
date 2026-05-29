@@ -14,6 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.neakta.data.SessionManager
+import com.example.neakta.network.normalizeImageUrl
+import com.example.neakta.network.normalizeImageUrls
 import com.example.neakta.ui.add.AddGemScreen
 import com.example.neakta.ui.auth.AuthViewModel
 import com.example.neakta.ui.auth.LoginScreen
@@ -58,7 +60,7 @@ fun NeaktaNavGraph() {
     val startDestination = when {
         session.isLoggedIn() -> "home"
         session.hasSeenOnboarding() -> "login"
-        else -> "onboarding"
+        else -> "splash"
     }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -92,7 +94,7 @@ fun NeaktaNavGraph() {
             composable("splash") {
                 SplashScreen(
                     onGetStarted = {
-                        navController.navigate("login") {
+                        navController.navigate("onboarding") {
                             popUpTo("splash") { inclusive = true }
                         }
                     }
@@ -201,13 +203,13 @@ fun NeaktaNavGraph() {
                             category        = p.categoryName ?: "",
                             votes           = p.upvoteCount,
                             story           = p.story,
-                            imageUrl        = p.imageUrl ?: "",
+                            imageUrl        = normalizeImageUrl(p.imageUrl),
                             author          = p.authorUsername ?: "",
                             timeAgo         = p.createdAt?.take(10) ?: "",
                             lat             = p.lat?.toDouble() ?: 11.5564,
                             lng             = p.lng?.toDouble() ?: 104.9282,
                             tags            = p.tags ?: emptyList(),
-                            mediaUrls       = p.mediaUrls ?: emptyList(),
+                            mediaUrls       = normalizeImageUrls(p.mediaUrls),
                             localDirections = p.localDirections ?: "",
                             stillExistsPct  = p.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
                             yearDiscovered  = p.createdAt?.take(4) ?: "2024"

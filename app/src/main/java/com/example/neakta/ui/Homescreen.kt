@@ -58,7 +58,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.neakta.data.SessionManager
+import com.example.neakta.network.normalizeImageUrl
+import com.example.neakta.network.normalizeImageUrls
 import com.example.neakta.ui.auth.Cinzel
+import com.example.neakta.ui.components.NeaktaBrandMark
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LocalAppLanguage
 
@@ -122,14 +125,14 @@ fun HomeScreen(
                 category        = pin.categoryName ?: "",
                 votes           = pin.upvoteCount,
                 story           = pin.story,
-                imageUrl        = pin.imageUrl ?: "",
+                imageUrl        = normalizeImageUrl(pin.imageUrl),
                 author          = pin.authorUsername ?: "",
                 timeAgo         = pin.createdAt?.take(10) ?: "",
                 lat             = pin.lat?.toDouble() ?: 11.5564,
                 lng             = pin.lng?.toDouble() ?: 104.9282,
                 localDirections = pin.localDirections ?: "",
                 tags            = pin.tags ?: emptyList(),
-                mediaUrls       = pin.mediaUrls ?: emptyList(),
+                mediaUrls       = normalizeImageUrls(pin.mediaUrls),
                 stillExistsPct  = if (pin.score > 0) pin.score.coerceIn(0, 100) else 97,
                 yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
             )
@@ -268,10 +271,7 @@ private fun HomeTopBar(onNavigateToProfile: () -> Unit, isKhmer: Boolean) {
         verticalAlignment     = Alignment.CenterVertically
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text  = "NEAKTA",
-                style = TextStyle(fontFamily = Cinzel, fontSize = 24.sp, letterSpacing = 5.sp, color = InkText)
-            )
+            NeaktaBrandMark(logoSize = 42.dp, textColor = InkText, fontSize = 24.sp, letterSpacing = 5.sp)
             Text(
                 text  = if (isKhmer) "កម្ពុជា រៀបចំឡើងវិញសម្រាប់ការរុករក"
                 else "Cambodia, remixed for discovery",

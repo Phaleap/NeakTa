@@ -3,6 +3,7 @@ package com.example.neakta.ui.add
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import android.webkit.MimeTypeMap
 import com.example.neakta.model.CategoryResponse
 import com.example.neakta.data.SessionManager
 import com.example.neakta.model.PinRequest
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Response
 import java.math.BigDecimal
 
 sealed class AddGemState {
@@ -108,13 +110,29 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
                 // Step 2: upload photos if any
                 for (uri in photoUris) {
                     try {
-                        val part = uriToMultipart(context, uri)
-                        if (part != null) {
-                            RetrofitClient.instance.uploadPinPhoto(token, createdPin.id, part)
+                        val uploadResponse = uploadPhotoWithFallbackFieldNames(
+                            token = token,
+                            pinId = createdPin.id,
+                            context = context,
+                            uri = uri
+                        )
+
+                        if (uploadResponse == null) {
+                            _state.value = AddGemState.Error("Could not read selected photo")
+                            return@launch
+                        }
+
+                        if (!uploadResponse.isSuccessful) {
+                            val detail = uploadResponse.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                                ?: uploadResponse.message().takeIf { it.isNotBlank() }
+                                ?: "No error body"
+                            _state.value = AddGemState.Error("Photo upload failed: HTTP ${uploadResponse.code()} - $detail")
+                            return@launch
                         }
                     } catch (e: Exception) {
-                        // Don't fail the whole submission if a photo upload fails
                         android.util.Log.e("AddGemVM", "Photo upload failed: ${e.message}")
+                        _state.value = AddGemState.Error("Photo upload failed: ${e.message ?: "Unknown error"}")
+                        return@launch
                     }
                 }
 
@@ -128,17 +146,53 @@ class AddGemViewModel(private val session: SessionManager) : ViewModel() {
 
     private fun uriToMultipart(
         context: android.content.Context,
-        uri: android.net.Uri
+        uri: android.net.Uri,
+        fieldName: String
     ): MultipartBody.Part? {
         return try {
             val stream = context.contentResolver.openInputStream(uri) ?: return null
             val bytes = stream.readBytes()
             stream.close()
-            val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
-            MultipartBody.Part.createFormData("file", "photo_${System.currentTimeMillis()}.jpg", requestBody)
+            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val extension = MimeTypeMap.getSingleton()
+                .getExtensionFromMimeType(mimeType)
+                ?.takeIf { it.isNotBlank() }
+                ?: "jpg"
+            val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+            MultipartBody.Part.createFormData(
+                fieldName,
+                "photo_${System.currentTimeMillis()}.$extension",
+                requestBody
+            )
         } catch (e: Exception) {
             null
         }
+    }
+
+    private suspend fun uploadPhotoWithFallbackFieldNames(
+        token: String,
+        pinId: String,
+        context: android.content.Context,
+        uri: android.net.Uri
+    ): Response<Map<String, String>>? {
+        var lastResponse: Response<Map<String, String>>? = null
+        val uploadRoutes: List<suspend (MultipartBody.Part) -> Response<Map<String, String>>> =
+            listOf(
+                { part -> RetrofitClient.instance.uploadPinPhoto(token, pinId, part) },
+                { part -> RetrofitClient.instance.updatePinPhoto(token, pinId, part) },
+                { part -> RetrofitClient.instance.uploadPinPhotoSingular(token, pinId, part) },
+                { part -> RetrofitClient.instance.updatePinPhotoSingular(token, pinId, part) }
+            )
+
+        for (upload in uploadRoutes) {
+            for (fieldName in listOf("file", "photo", "image")) {
+                val part = uriToMultipart(context, uri, fieldName) ?: return null
+                val response = upload(part)
+                if (response.isSuccessful) return response
+                lastResponse = response
+            }
+        }
+        return lastResponse
     }
 
     fun resetState() {

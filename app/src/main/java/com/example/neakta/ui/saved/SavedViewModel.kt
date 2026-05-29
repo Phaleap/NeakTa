@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.neakta.data.SessionManager
+import com.example.neakta.network.normalizeImageUrl
+import com.example.neakta.network.normalizeImageUrls
 import com.example.neakta.network.RetrofitClient
 import com.example.neakta.ui.home.PinCard
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,13 +40,13 @@ class SavedViewModel(private val session: SessionManager) : ViewModel() {
                         category        = pin.categoryName ?: "",
                         votes           = pin.upvoteCount,
                         story           = pin.story,
-                        imageUrl        = pin.imageUrl ?: "",
+                        imageUrl        = normalizeImageUrl(pin.imageUrl),
                         author          = pin.authorUsername ?: "",
                         timeAgo         = pin.createdAt?.take(10) ?: "",
                         lat             = pin.lat?.toDouble() ?: 11.5564,
                         lng             = pin.lng?.toDouble() ?: 104.9282,
                         tags            = pin.tags ?: emptyList(),
-                        mediaUrls       = pin.mediaUrls ?: emptyList(),
+                        mediaUrls       = normalizeImageUrls(pin.mediaUrls),
                         localDirections = pin.localDirections ?: "",
                         stillExistsPct  = pin.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
                         yearDiscovered  = pin.createdAt?.take(4) ?: "2024"

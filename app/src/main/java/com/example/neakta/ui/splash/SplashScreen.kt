@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.neakta.R
+import com.example.neakta.ui.components.NeaktaVerticalBrandMark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -164,16 +165,11 @@ fun SplashScreen(
                 .alpha(alphaAnim),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "NEAKTA",
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 42.sp,
-                    letterSpacing = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = InkText,
-                    textAlign = TextAlign.Center
-                )
+            NeaktaVerticalBrandMark(
+                logoSize = 96.dp,
+                textColor = InkText,
+                fontSize = 38.sp,
+                letterSpacing = 9.sp
             )
             Spacer(modifier = Modifier.height(6.dp))
             // Animated color underline strip

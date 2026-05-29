@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.neakta.R
+import com.example.neakta.ui.components.NeaktaBrandMark
 import com.example.neakta.ui.theme.Cinzel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
@@ -221,15 +222,7 @@ private fun OnboardingTopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = "NEAKTA",
-                style = TextStyle(
-                    fontFamily = Cinzel,
-                    fontSize = 22.sp,
-                    letterSpacing = 5.sp,
-                    color = InkText
-                )
-            )
+            NeaktaBrandMark(logoSize = 38.dp, textColor = InkText, fontSize = 22.sp, letterSpacing = 5.sp)
             Text(
                 text = "Cambodia, remixed for discovery",
                 style = TextStyle(

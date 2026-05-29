@@ -60,8 +60,11 @@ import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.example.neakta.data.SessionManager
 import com.example.neakta.network.RetrofitClient
+import com.example.neakta.network.normalizeImageUrl
+import com.example.neakta.network.normalizeImageUrls
 import com.example.neakta.util.getBestLastKnownLocation
 import com.example.neakta.ui.auth.Cinzel
+import com.example.neakta.ui.components.NeaktaBrandMark
 import com.example.neakta.ui.core.AppLanguage
 import com.example.neakta.ui.core.LocalAppLanguage
 import com.example.neakta.ui.home.PinCard
@@ -131,13 +134,13 @@ fun MapScreen(
                         category        = pin.categoryName ?: "",
                         votes           = pin.upvoteCount,
                         story           = pin.story,
-                        imageUrl        = pin.imageUrl ?: "",
+                        imageUrl        = normalizeImageUrl(pin.imageUrl),
                         author          = pin.authorUsername ?: "",
                         timeAgo         = pin.createdAt?.take(10) ?: "",
                         lat             = pin.lat?.toDouble() ?: 11.5564,
                         lng             = pin.lng?.toDouble() ?: 104.9282,
                         tags            = pin.tags ?: emptyList(),
-                        mediaUrls       = pin.mediaUrls ?: emptyList(),
+                        mediaUrls       = normalizeImageUrls(pin.mediaUrls),
                         localDirections = pin.localDirections ?: "",
                         stillExistsPct  = pin.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
                         yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
@@ -159,13 +162,13 @@ fun MapScreen(
                 category        = pin.categoryName ?: "",
                 votes           = pin.upvoteCount,
                 story           = pin.story,
-                imageUrl        = pin.imageUrl ?: "",
+                imageUrl        = normalizeImageUrl(pin.imageUrl),
                 author          = pin.authorUsername ?: "",
                 timeAgo         = pin.createdAt?.take(10) ?: "",
                 lat             = pin.lat?.toDouble() ?: 11.5564,
                 lng             = pin.lng?.toDouble() ?: 104.9282,
                 tags            = pin.tags ?: emptyList(),
-                mediaUrls       = pin.mediaUrls ?: emptyList(),
+                mediaUrls       = normalizeImageUrls(pin.mediaUrls),
                 localDirections = pin.localDirections ?: "",
                 stillExistsPct  = pin.score.coerceIn(0, 100).takeIf { it > 0 } ?: 97,
                 yearDiscovered  = pin.createdAt?.take(4) ?: "2024"
@@ -401,10 +404,7 @@ private fun MapHeader(isKhmer: Boolean) {
             .padding(top = 18.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text  = "NEAKTA",
-            style = TextStyle(fontFamily = Cinzel, fontSize = 24.sp, letterSpacing = 5.sp, color = InkText)
-        )
+        NeaktaBrandMark(logoSize = 42.dp, textColor = InkText, fontSize = 24.sp, letterSpacing = 5.sp)
         Text(
             text  = if (isKhmer) "រុករកកម្ពុជាតាមកន្លែង ខេត្ត និងស្មារតីក្នុងស្រុក"
             else "Explore Cambodia by place, province, and local memory",

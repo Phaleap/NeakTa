@@ -17,6 +17,13 @@ class SessionManager(context: Context) {
 
     fun isLoggedIn(): Boolean = !getToken().isNullOrBlank()
 
+    // ── User ID ──────────────────────────────────────────────
+    fun saveUserId(userId: String) {
+        prefs.edit().putString(KEY_USER_ID, userId).apply()
+    }
+
+    fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
+
     // ── Onboarding ───────────────────────────────────────────
     fun setOnboardingSeen() {
         prefs.edit().putBoolean(KEY_ONBOARDING, true).apply()
@@ -28,14 +35,14 @@ class SessionManager(context: Context) {
     fun clearSession() {
         prefs.edit()
             .remove(KEY_TOKEN)
+            .remove(KEY_USER_ID)
             .apply()
-        // NOTE: KEY_ONBOARDING is intentionally kept —
-        // user shouldn't see onboarding again after logout
     }
 
     companion object {
         private const val PREF_NAME      = "neakta_prefs"
         private const val KEY_TOKEN      = "auth_token"
+        private const val KEY_USER_ID    = "user_id"
         private const val KEY_ONBOARDING = "has_seen_onboarding"
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.neakta.ui.components.NeaktaBrandMark
 
 // ─── Color Tokens (shared with HomeScreen) ───────────────────
 val ElectricBlue  = Color(0xFF5FD3A6)
@@ -106,16 +107,7 @@ fun LoginScreen(
                     .statusBarsPadding()
                     .padding(horizontal = 24.dp, vertical = 28.dp)
             ) {
-                Text(
-                    text = "NEAKTA",
-                    style = TextStyle(
-                        fontFamily = Cinzel,
-                        fontSize = 28.sp,
-                        letterSpacing = 6.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = InkText
-                    )
-                )
+                NeaktaBrandMark(logoSize = 46.dp, textColor = InkText, fontSize = 28.sp, letterSpacing = 6.sp)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Cambodia, remixed for discovery",
